@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+cache/
+New folder/
+dist/
+build/
+*.spec
+.claude/settings.local.json

@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "FAHAD TV Launcher",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["app.py"]
+    }
+  ]
+}

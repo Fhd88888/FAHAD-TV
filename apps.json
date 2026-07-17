@@ -1,0 +1,116 @@
+[
+  {
+    "label": "الوصول السريع",
+    "apps": [
+      {
+        "id": "app_a259f08b",
+        "name": "يوتيوب",
+        "sub": "YouTube.lnk",
+        "glyph": "📺",
+        "c1": "#004be0",
+        "c2": "#305bc0",
+        "backgroundPath": "C:\\FAHAD TV\\cache\\wallpapers\\app_a259f08b_bg.png",
+        "iconPath": "",
+        "args": "",
+        "img": "C:\\FAHAD TV\\cache\\wallpapers\\app_a259f08b_bg.png",
+        "target": "C:\\Users\\fahad\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Chrome Apps\\YouTube.lnk"
+      }
+    ]
+  },
+  {
+    "label": "التطبيقات والترفيه",
+    "apps": [
+      {
+        "id": "netflix",
+        "name": "نتفلكس",
+        "sub": "https://www.netflix.com",
+        "glyph": "🎬",
+        "c1": "#b79596",
+        "c2": "#4a0f12",
+        "img": "C:\\FAHAD TV\\cache\\wallpapers\\netflix_bg.png",
+        "target": "https://www.netflix.com",
+        "iconPath": "",
+        "backgroundPath": "C:\\FAHAD TV\\cache\\wallpapers\\netflix_bg.png",
+        "args": ""
+      },
+      {
+        "id": "youtube",
+        "name": "يوتيوب",
+        "sub": "https://www.youtube.com",
+        "glyph": "▶️",
+        "c1": "#a3282d",
+        "c2": "#5e1518",
+        "img": "C:\\FAHAD TV\\cache\\wallpapers\\youtube_bg.png",
+        "target": "https://www.youtube.com",
+        "iconPath": "",
+        "backgroundPath": "C:\\FAHAD TV\\cache\\wallpapers\\youtube_bg.png",
+        "args": ""
+      },
+      {
+        "id": "browser",
+        "name": "chrome",
+        "sub": "chrome.exe",
+        "glyph": "🌐",
+        "c1": "#1d5c8f",
+        "c2": "#12395c",
+        "img": "C:\\FAHAD TV\\cache\\wallpapers\\browser_bg.png",
+        "target": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "iconPath": "",
+        "backgroundPath": "C:\\FAHAD TV\\cache\\wallpapers\\browser_bg.png",
+        "args": ""
+      },
+      {
+        "id": "files",
+        "name": "مستكشف الملفات",
+        "sub": "explorer.exe",
+        "glyph": "📁",
+        "c1": "#a67c1e",
+        "c2": "#5f470f",
+        "img": "",
+        "target": "explorer.exe",
+        "iconPath": "",
+        "backgroundPath": "",
+        "args": ""
+      },
+      {
+        "id": "settings",
+        "name": "الإعدادات",
+        "sub": "Settings",
+        "glyph": "⚙️",
+        "c1": "#565d6b",
+        "c2": "#2e323b",
+        "img": "",
+        "target": [
+          "cmd",
+          "/c",
+          "start",
+          "ms-settings:"
+        ],
+        "iconPath": "",
+        "backgroundPath": "",
+        "args": ""
+      }
+    ]
+  },
+  {
+    "label": "ألعابي",
+    "apps": [
+      {
+        "id": "steam",
+        "name": "مكتبة الألعاب",
+        "sub": "Steam",
+        "glyph": "🎮",
+        "c1": "#31566e",
+        "c2": "#1b3242",
+        "img": "",
+        "target": [
+          "C:\\Program Files (x86)\\Steam\\steam.exe",
+          "steam://open/bigpicture"
+        ],
+        "iconPath": "",
+        "backgroundPath": "",
+        "args": ""
+      }
+    ]
+  }
+]
