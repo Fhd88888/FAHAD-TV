@@ -23,7 +23,7 @@ An open-source Windows app that mimics the Android TV experience: a customizable
 ## ⬇️ Download
 
 **Latest version (v1.36):**
-[FAHAD TV-1.36-Setup.exe](PUT_YOUR_RELEASE_LINK_HERE)
+[FAHAD TV-1.36-Setup.exe](https://drive.google.com/file/d/1m3yV83Ov5goK_asHPlWg6quX-8x2rhpl/view?usp=drive_link)
 
 ## 🕓 Previous Versions
 
