@@ -6,229 +6,162 @@
 <title>FAHAD TV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#181a1f; --bg-deep:#101216;
-    --ink:#eef0f3; --ink-dim:#8b919c;
-    --line:#2a2d34; --focus:#ffffff; --toast-bg:#23262d;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;
-    background:
-      radial-gradient(1200px 700px at 50% -10%, #22252c 0%, transparent 60%),
-      repeating-linear-gradient(45deg, transparent 0 34px, rgba(255,255,255,.015) 34px 35px),
-      repeating-linear-gradient(-45deg, transparent 0 34px, rgba(255,255,255,.015) 34px 35px),
-      var(--bg);
-    color:var(--ink); overflow:hidden; cursor:none;
-  }
-  body.mouse-on{cursor:default;}
-
-  #ambient{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;transition:background 600ms ease;}
-  .shell{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;padding:3.2vh 4vw;}
-
-  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:3.5vh;}
-  .tv-title{
-    font-size:clamp(1.15rem,2.2vw,2.1rem);
-    font-weight:800;
-    letter-spacing:.06em;
-    color:var(--ink);
-    margin-bottom:.35vh;
-    text-shadow:0 6px 24px rgba(0,0,0,.55);
-    text-align:right;
-  }
-  .clock{display:flex;align-items:baseline;gap:.5em;}
-  .clock .time{font-size:clamp(2.2rem,4.5vw,4rem);font-weight:700;font-variant-numeric:tabular-nums;}
-  .clock .period{font-size:clamp(1rem,1.6vw,1.4rem);color:var(--ink-dim);font-weight:500;}
-  .clock .date{font-size:clamp(.95rem,1.4vw,1.2rem);color:var(--ink-dim);margin-top:.2em;}
-  .hint{font-size:clamp(.75rem,1vw,.95rem);color:var(--ink-dim);text-align:left;line-height:1.9;}
-  .hint kbd{background:var(--line);border-radius:6px;padding:.1em .55em;font-family:inherit;font-size:.9em;color:var(--ink);}
-
-  main{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;gap:2vh;min-height:0;}
-  .row{min-height:0;}
-  .row-label{
-    font-size:clamp(1rem,1.6vw,1.35rem);font-weight:600;color:var(--ink-dim);
-    margin-bottom:1.2vh;transition:color .25s ease;text-align:center;
-  }
-  .row.active .row-label{color:var(--ink);}
-  .tiles{
-    display:flex;gap:1.4vw;overflow-x:auto;scroll-behavior:smooth;
-    padding:14px 6px;scrollbar-width:none;
-    justify-content:safe center;
-  }
-  .tiles::-webkit-scrollbar{display:none;}
-
-  .tile{
-    flex:0 0 auto;
-    width:clamp(150px,13.5vw,230px);
-    aspect-ratio:16/10; border-radius:18px;
-    display:flex;flex-direction:column;justify-content:flex-end;
-    padding:1em 1.1em; position:relative; overflow:hidden;
-    border:none;outline:none;
-    font-family:inherit;text-align:right;color:#fff;
-    transition:transform .18s ease, box-shadow .18s ease;
-    box-shadow:0 4px 18px rgba(0,0,0,.35);
-  }
-  .tile .glyph{position:absolute;top:.5em;inset-inline-start:.6em;font-size:clamp(1.8rem,3vw,2.6rem);filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));}
-  .tile .name{font-size:clamp(.95rem,1.35vw,1.2rem);font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.5);}
-  .tile .sub{font-size:clamp(.7rem,.95vw,.85rem);font-weight:400;opacity:.75;text-shadow:0 1px 3px rgba(0,0,0,.5);direction:ltr;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .tile.focused{
-    transform:scale(1.07);
-    box-shadow:0 0 0 4px var(--focus), 0 10px 34px rgba(0,0,0,.55), 0 0 44px var(--glow, rgba(255,255,255,.15));
-    z-index:2;
-  }
-  .tile.add{
-    background:transparent;border:2px dashed var(--line);
-    justify-content:center;align-items:center;color:var(--ink-dim);
-    box-shadow:none;
-  }
-  .tile.add .plus{font-size:clamp(1.6rem,2.6vw,2.2rem);line-height:1;}
-  .tile.add .name{font-size:clamp(.85rem,1.1vw,1rem);text-shadow:none;margin-top:.4em;}
-  .tile.add.focused{border-color:var(--focus);color:var(--ink);box-shadow:0 0 0 2px var(--focus);}
-
-  .tile .actions-overlay {
-    position:absolute; top: 8px; left: 8px; /* For LTR components or general left side */
-    display:flex; gap:.4em;
-    opacity:0; transition:opacity .2s; pointer-events:none;
-    z-index: 10;
-  }
-  .tile:hover .actions-overlay, .tile.focused .actions-overlay {
-    opacity:1; pointer-events:auto;
-  }
-  .actions-overlay button {
-    background:rgba(20,24,30,.8); border:1px solid rgba(255,255,255,.2); border-radius:50%; 
-    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-    font-size:.9rem; color:#fff; cursor:pointer; transition:background .2s, border-color .2s;
-    backdrop-filter: blur(4px);
-  }
-  .actions-overlay button:hover { background:var(--line); border-color:var(--focus); transform:scale(1.1); }
-
-  @media (prefers-reduced-motion:reduce){
-    .tile,.tiles{transition:none;scroll-behavior:auto;}
-    .tile.focused{transform:none;}
-  }
-
-  /* ===== نافذة إضافة/تعديل تطبيق ===== */
-  /* ===== Context Menu Fluent (Right Click) ===== */
-  #ctxMenu{
-    position:fixed; z-index:40; display:none;
-    background:rgba(20,24,30,.92);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:.35em 0;
-    min-width:min(320px,86vw);
-    box-shadow:0 18px 60px rgba(0,0,0,.55);
-    backdrop-filter:blur(10px);
-    overflow:hidden;
-  }
-  #ctxMenu.show{display:block;}
-  #ctxMenu .ctx-item{
-    width:100%;
-    background:transparent;
-    border:none;
-    color:var(--ink);
-    font-family:inherit;
-    text-align:inherit;
-    padding:.6em 1em;
-    display:flex;
-    gap:.7em;
-    align-items:center;
-    cursor:pointer;
-    font-size:1rem;
-  }
-  #ctxMenu .ctx-item:hover{
-    background:rgba(255,255,255,.06);
-  }
-  #ctxMenu .ctx-item.danger{ color:#ff6b6b; }
-  #ctxMenu .ctx-item small{
-    color:var(--ink-dim); margin-inline-start:auto;
-    font-size:.85em;
-  }
-
-  #dialog{
-
-    position:fixed;inset:0;z-index:20;display:none;
-    align-items:center;justify-content:center;
-    background:rgba(10,12,16,.72);backdrop-filter:blur(6px);
-  }
-  #dialog.open{display:flex;}
-  .card{
-    background:#20232a;border:1px solid var(--line);border-radius:20px;
-    padding:1.8em 2em;width:min(560px,92vw);max-height:90vh;overflow-y:auto;
-    display:flex;flex-direction:column;gap:1em;
-  }
-  .card h2{font-size:1.25rem;font-weight:700;}
-  .card .row-name{color:var(--ink-dim);font-size:.9rem;}
-  .card label{font-size:.9rem;color:var(--ink-dim);display:block;margin-bottom:.35em;}
-  .card input{
-    width:100%;background:var(--bg-deep);border:1px solid var(--line);border-radius:12px;
-    padding:.65em 1em;color:var(--ink);font-family:inherit;font-size:1rem;outline:none;
-  }
-  .card input:focus{border-color:var(--focus);}
-  .card input.ltr{direction:ltr;text-align:left;}
-  .glyphs{display:flex;flex-wrap:wrap;gap:.5em;}
-  .glyphs button{
-    background:var(--bg-deep);border:1px solid var(--line);border-radius:10px;
-    font-size:1.25rem;padding:.25em .45em;cursor:pointer;
-  }
-  .glyphs button.sel{border-color:var(--focus);background:var(--line);}
-
-  .img-search{display:flex;gap:.6em;}
-  .img-search input{flex:1;}
-  .img-search button{
-    font-family:inherit;font-size:.95rem;font-weight:600;border-radius:12px;
-    padding:.55em 1.3em;border:1px solid var(--line);background:var(--bg-deep);
-    color:var(--ink);cursor:pointer;white-space:nowrap;
-  }
-  .img-results{display:flex;flex-wrap:wrap;gap:.6em;margin-top:.7em;}
-  .img-results:empty{display:none;}
-  .img-results img{
-    width:64px;height:64px;object-fit:cover;border-radius:12px;
-    border:2px solid transparent;cursor:pointer;background:var(--bg-deep);
-  }
-  .img-results img.sel{border-color:var(--focus);box-shadow:0 0 12px rgba(255,255,255,.3);}
-  .img-remove{font-size:.85rem;color:var(--ink-dim);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:inherit;margin-top:.4em;}
-
-  .actions{display:flex;gap:.8em;justify-content:flex-start;margin-top:.3em;}
-  .actions button{
-    font-family:inherit;font-size:1rem;font-weight:600;border-radius:12px;
-    padding:.6em 1.6em;border:none;cursor:pointer;
-  }
-  .btn-save{background:#2e7d55;color:#fff;}
-  .btn-cancel{background:var(--line);color:var(--ink);}
-
-  #toast{
-    position:fixed;bottom:4vh;right:50%;transform:translateX(50%) translateY(20px);
-    background:var(--toast-bg);color:var(--ink);
-    padding:.8em 1.6em;border-radius:14px;border:1px solid var(--line);
-    font-size:clamp(.9rem,1.2vw,1.1rem);
-    opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
-    z-index:30;max-width:80vw;text-align:center;
-  }
-  #toast.show{opacity:1;transform:translateX(50%) translateY(0);}
-</style>
+<link rel="stylesheet" href="entertainment.css">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
+<div id="move-banner">
+  ↔️ وضع الترتيب — اضغط ◀▶ لتحريك الكرت &nbsp;|&nbsp; <kbd style="background:rgba(0,0,0,.18);border-radius:6px;padding:.1em .5em;">Enter / OK</kbd> للتأكيد &nbsp;|&nbsp; <kbd style="background:rgba(0,0,0,.18);border-radius:6px;padding:.1em .5em;">Esc / Back</kbd> للإلغاء
+</div>
 <div id="ambient"></div>
 
 <div class="shell">
   <header>
+    <!-- يسار: اسم التطبيق + الساعة -->
     <div>
-      <div class="tv-title" id="tv-title">FAHAD TV</div>
+      <div class="tv-title" id="tv-title"><img src="icon.png" style="height:1.2em; vertical-align:-0.15em; border-radius:16px; margin-inline-end:8px; box-shadow:0 4px 12px rgba(0,0,0,.4);">FAHAD TV <span id="app-version" style="font-size:0.4em; color:var(--ink-dim); vertical-align:middle;">v1.36</span></div>
+      <div class="nav-tabs">
+        <button id="tab-home" class="nav-tab active">الرئيسية</button>
+        <button id="tab-apps" class="nav-tab">التطبيقات</button>
+        <button id="tab-ent" class="nav-tab">الترفيه</button>
+        <button id="tab-matches" class="nav-tab">المباريات</button>
+      </div>
       <div class="clock">
         <span class="time" id="clock-time">--:--</span>
         <span class="period" id="clock-period"></span>
       </div>
       <div class="date" id="clock-date"></div>
     </div>
-    <div class="hint">
-      <kbd>◀▶▲▼</kbd> تنقل &nbsp;•&nbsp; <kbd>Enter</kbd> تشغيل &nbsp;•&nbsp; <kbd>E</kbd> تعديل<br>
-      <kbd>Ctrl+◀▶</kbd> تحريك الكرت &nbsp;•&nbsp; <kbd>Delete</kbd> مرتين حذف &nbsp;•&nbsp; <kbd>Ctrl+Q</kbd> خروج &nbsp;•&nbsp; 🎮 مدعومة
+    <!-- يمين: حالة الشبكة + أزرار التحكم -->
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:.55em;">
+      <!-- حالة الشبكة (واي فاي + إيثرنت) -->
+      <div id="net-status" class="net-status">
+        <span id="net-wifi" class="net-item off" title="حالة الواي فاي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          <span id="net-wifi-text">—</span>
+        </span>
+        <span id="net-eth" class="net-item on" title="متصل عبر الإيثرنت" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="20" height="6" rx="1"/><path d="M6 15v3M10 15v3M14 15v3M18 15v3"/></svg>
+          <span>إيثرنت</span>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6em;">
+      <!-- بحث -->
+      <button id="btn-search"   class="hdr-btn"        title="بحث">&#x1F50D;</button>
+      <!-- استيراد تطبيقات -->
+      <button id="btn-import"   class="hdr-btn"        title="استيراد التطبيقات">&#x1F4E5;</button>
+      <!-- إعدادات -->
+      <button id="btn-settings" class="hdr-btn"        title="إعدادات FAHAD TV">&#x2699;&#xFE0F;</button>
+      <div class="hdr-sep"></div>
+      <!-- سكون - إعادة تشغيل - إيقاف -->
+      <button id="btn-sleep"    class="hdr-btn warn"   title="وضع السكون">&#x1F319;</button>
+      <button id="btn-restart"  class="hdr-btn warn"   title="إعادة التشغيل">&#x1F504;</button>
+      <button id="btn-shutdown" class="hdr-btn danger" title="إيقاف التشغيل" style="display:flex;align-items:center;justify-content:center;"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"></path></svg></button>
+      <div class="hdr-sep"></div>
+      <!-- إعادة تشغيل التطبيق -->
+      <button id="btn-restart-app" class="hdr-btn" title="إعادة تشغيل FAHAD TV" style="display:flex;align-items:center;justify-content:center;"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="21" height="21" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M18.5 8A8 8 0 0 0 5.1 6.6M5.5 16A8 8 0 0 0 18.9 17.4"></path></svg></button>
+      <!-- خروج لسطح المكتب -->
+      <button id="btn-exit"     class="hdr-btn exit"   title="خروج لسطح المكتب">&#x1F5A5;&#xFE0F;</button>
+      </div>
     </div>
   </header>
 
   <main id="rows"></main>
+  <div id="matches-view" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2vh;">
+      <h2 style="font-size:1.5rem; color:var(--ink);">مباريات دورياتك</h2>
+      <button id="btn-manage-leagues" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:.6em 1.2em; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.5em; transition:transform .2s;">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0m.5 4.5a.5.5 0 0 1 1 0V6h1.5a.5.5 0 0 1 0 1H10v1.5a.5.5 0 0 1-1 0V7H7.5a.5.5 0 0 1 0-1H9z"/></svg>
+        إدارة البطولات
+      </button>
+    </div>
+    <div id="matches-content">
+      <!-- Loading or Matches will be injected here -->
+    </div>
+  </div>
+
+  <div id="ent-view" style="display:none; flex-direction:column; height:100%;">
+    <div class="ent-nav">
+       <button id="ent-tab-discover" class="nav-tab active">اكتشف</button>
+       <button id="ent-tab-calendar" class="nav-tab">تقويم الإصدارات</button>
+       <button id="ent-tab-search" class="nav-tab">بحث</button>
+       <button id="ent-tab-favorites" class="nav-tab">المفضلة</button>
+    </div>
+    
+    <div id="ent-setup-screen" style="display:none;">
+      <h2>مرحباً بك في الترفيه 🎬</h2>
+      <p>للتمتع بأحدث الأفلام والمسلسلات، يرجى إعداد واجهة برمجة TMDB من الإعدادات أو تفعيل المفتاح الافتراضي.</p>
+      <button onclick="document.getElementById('btn-settings').click(); setTimeout(()=>document.getElementById('set-tab-ent').click(), 300)" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:1em 2em; font-weight:bold; cursor:pointer; font-size:1.1rem; transition:transform 0.2s;">فتح الإعدادات</button>
+    </div>
+
+    <div id="ent-content-discover" class="ent-page"></div>
+    <div id="ent-content-calendar" class="ent-page" style="display:none;"></div>
+    <div id="ent-content-search" class="ent-page" style="display:none; padding:1em;">
+       <input type="text" id="ent-search-input" placeholder="🔍 ابحث عن فيلم، مسلسل، أو ممثل..." style="width:100%; padding:1em; border-radius:12px; border:1px solid var(--line); background:var(--bg-deep); color:var(--ink); font-size:1.1rem; outline:none; margin-bottom:2em;">
+       <div id="ent-search-results" style="display:flex; flex-wrap:wrap; gap:1em;"></div>
+    </div>
+    <div id="ent-content-favorites" class="ent-page" style="display:none; padding:1em;">
+      <h3 style="margin-bottom:1em;">أفلامي ومسلسلاتي المفضلة ❤️</h3>
+      <div id="ent-favorites-grid" style="display:flex; flex-wrap:wrap; gap:1em;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Entertainment Details Dialog -->
+<div id="ent-details-dialog">
+  <div class="ent-modal">
+    <div class="ent-modal-backdrop" id="ent-modal-backdrop"></div>
+    <button id="btn-close-ent" style="position:absolute; top:20px; left:20px; z-index:10; background:rgba(0,0,0,0.5); border:none; color:#fff; font-size:1.5rem; width:40px; height:40px; border-radius:50%; cursor:pointer;">&times;</button>
+    <div class="ent-modal-content">
+      <div class="ent-modal-left">
+        <img id="ent-modal-poster" class="ent-modal-poster" src="" alt="">
+        <div class="ent-providers" id="ent-providers-container" style="display:none;">
+          <h4 style="margin-bottom:0.5em; font-size:0.9rem; color:var(--ink-dim);">متوفر على:</h4>
+          <div class="ent-provider-icons" id="ent-providers-list"></div>
+        </div>
+      </div>
+      <div class="ent-modal-right">
+        <h2 class="ent-modal-title" id="ent-modal-title"></h2>
+        <div class="ent-modal-tags" id="ent-modal-tags"></div>
+        <p class="ent-modal-overview" id="ent-modal-overview"></p>
+        <div class="ent-quick-actions" id="ent-quick-actions">
+          <button class="ent-action-btn" id="ent-btn-trailer" style="display:none;">▶ العرض الدعائي</button>
+          <button class="ent-action-btn secondary" id="ent-btn-favorite">❤️ أضف للمفضلة</button>
+          <button class="ent-action-btn secondary" id="ent-btn-tmdb">🌐 صفحة TMDB</button>
+        </div>
+        <h3 style="margin-bottom:1em; font-size:1.2rem;">طاقم العمل</h3>
+        <div class="ent-cast-grid" id="ent-modal-cast"></div>
+        <div id="ent-recommendations-container" style="display:none; margin-top:2em;">
+          <h3 style="margin-bottom:1em; font-size:1.2rem;">قد يعجبك أيضاً</h3>
+          <div class="ent-cast-grid" id="ent-modal-recommendations"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Ent Dialog -->
+
+
+<!-- نافذة اختيار الدوريات -->
+<div id="leagues-dialog" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); backdrop-filter:blur(10px); align-items:center; justify-content:center; z-index:9999;">
+  <div style="background:var(--bg-deep); width:90%; max-width:700px; height:80vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="padding:1.5em; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; background:var(--bg);">
+      <h2 style="font-size:1.3rem; color:var(--ink); margin:0;">اختر بطولات لمتابعتها</h2>
+      <button id="btn-close-leagues" style="background:transparent; border:none; color:var(--ink-dim); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    
+    <div style="padding:1em 1.5em; border-bottom:1px solid var(--line); background:var(--bg);">
+      <input type="text" id="search-leagues" placeholder="🔍 ابحث عن البطولة أو الدولة..." style="width:100%; padding:.8em 1em; border-radius:8px; border:1px solid var(--line); background:var(--bg-deep); color:var(--ink); font-size:1rem; outline:none;">
+    </div>
+    
+    <div id="leagues-grid" style="flex:1; overflow-y:auto; padding:1.5em; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:1em;">
+      <!-- League cards generated via JS -->
+    </div>
+    
+    <div style="padding:1em 1.5em; border-top:1px solid var(--line); background:var(--bg); display:flex; justify-content:flex-end; gap:1em;">
+      <button id="btn-save-leagues" class="btn" style="background:#ffffff; color:#000000; border:none; font-weight:bold;">حفظ التغييرات</button>
+    </div>
+  </div>
 </div>
 
 <!-- نافذة إضافة/تعديل تطبيق -->
@@ -243,13 +176,7 @@
       <label>اسم التطبيق</label>
       <input id="dlg-name" placeholder="مثال: سبوتيفاي">
     </div>
-    <div>
-      <label>الأيقونة (تظهر إذا ما فيه صورة)</label>
-      <div style="display:flex;gap:.5em;">
-        <input id="dlg-glyph" style="width:3em;text-align:center;" placeholder="🎮">
-        <span style="color:var(--ink-dim);font-size:.9rem;align-self:center;">حط إيموجي إذا تبي كأيقونة بسيطة</span>
-      </div>
-    </div>
+
     <div>
       <label>ألوان البطاقة (في حال عدم وجود صورة خلفية)</label>
       <div style="display:flex;gap:1em;align-items:center;">
@@ -264,10 +191,15 @@
         <button id="dlg-browse-exe" style="padding:.5em;border-radius:12px;background:var(--bg-deep);border:1px solid var(--line);color:var(--ink);cursor:pointer;">📁 استعراض</button>
       </div>
     </div>
-    <div>
-      <label>الأيقونة (تظهر إذا ما فيه صورة)</label>
-      <div class="glyphs" id="dlg-glyphs"></div>
+    <div style="display:flex;gap:2em;margin-top:.5em;">
+      <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;flex-direction:row;">
+        <input type="checkbox" id="dlg-favorite" style="width:auto;transform:scale(1.2);"> إضافة للمفضلة (الرئيسية)
+      </label>
+      <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;flex-direction:row;">
+        <input type="checkbox" id="dlg-hidden" style="width:auto;transform:scale(1.2);"> إخفاء التطبيق
+      </label>
     </div>
+
     <div>
       <label>صورة البلاطة (الخلفية) — ابحث من النت أو الصق رابط صورة</label>
       <div class="img-search">
@@ -289,21 +221,144 @@
 
 <!-- Settings Overlay -->
 <div id="settings-dialog" style="position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;background:rgba(10,12,16,.9);backdrop-filter:blur(10px);">
-  <div class="card" style="width:min(600px, 90vw);">
-    <h2>إعدادات FAHAD TV</h2>
-    <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;font-size:1.1rem;color:var(--ink);">
-      <input type="checkbox" id="set-startup" style="width:auto;transform:scale(1.3);"> تشغيل FAHAD TV تلقائياً مع الويندوز
-    </label>
-    <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;font-size:1.1rem;color:var(--ink);margin-top:1em;">
-      <input type="checkbox" id="set-fullscreen" style="width:auto;transform:scale(1.3);"> وضع ملء الشاشة (يحتاج إعادة تشغيل)
-    </label>
-    <div style="margin-top:1em;border-top:1px solid var(--line);padding-top:1em;">
-      <h3>حول البرنامج</h3>
-      <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5;">FAHAD TV - الإصدار الاحترافي<br>مشغل تطبيقات التلفزيون الذكي لنظام ويندوز.</p>
+  <div class="card" style="width:min(800px, 90vw); display:flex; flex-direction:row; padding:0; overflow:hidden;">
+    <!-- Sidebar -->
+    <div style="background:var(--bg-deep); width:240px; padding:1.5em; display:flex; flex-direction:column; gap:.5em; border-left:1px solid var(--line);">
+      <h2 style="margin-bottom:1em; font-size:1.2rem;">الإعدادات</h2>
+      <button class="set-tab active" data-target="set-general">عام</button>
+      <button class="set-tab" data-target="set-appearance">المظهر والخلفية</button>
+      <button class="set-tab" data-target="set-connectivity">الشبكة والاتصال</button>
+      <button id="set-tab-ent" class="set-tab" data-target="set-ent">الترفيه</button>
+      <button class="set-tab" data-target="set-storage">التخزين</button>
+      <button class="set-tab" data-target="set-about">حول</button>
     </div>
-    <div class="actions" style="margin-top:2em;">
-      <button class="btn-save" id="btn-save-settings">حفظ الإعدادات</button>
-      <button class="btn-cancel" id="btn-close-settings">إغلاق</button>
+    <!-- Content -->
+    <div style="flex:1; padding:2em; overflow-y:auto; max-height:80vh;" id="set-content-area">
+      <!-- General -->
+      <div id="set-general" class="set-pane active">
+        <h3>إعدادات عامة</h3>
+        <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;font-size:1.1rem;color:var(--ink);margin-top:1em;">
+          <input type="checkbox" id="set-startup" style="width:auto;transform:scale(1.3);"> تشغيل FAHAD TV تلقائياً مع الويندوز
+        </label>
+        <label style="display:flex;align-items:center;gap:.5em;cursor:pointer;font-size:1.1rem;color:var(--ink);margin-top:1em;">
+          <input type="checkbox" id="set-fullscreen" style="width:auto;transform:scale(1.3);"> وضع ملء الشاشة (يحتاج إعادة تشغيل)
+        </label>
+        
+        <div style="margin-top:3em; padding:1.5em; border:1px solid var(--line); border-radius:12px; background:rgba(255,50,50,0.05);">
+            <h4 style="color:#ff6b6b; margin-bottom:.5em;">إعدادات المصنع</h4>
+            <p style="color:var(--ink-dim); font-size:.9rem; margin-bottom:1em;">سيتم مسح جميع التطبيقات المضافة وإرجاع الإعدادات للوضع الافتراضي.</p>
+            <div style="display:flex; gap:1em; align-items:center;">
+                <input type="password" id="set-factory-pwd" placeholder="الرقم السري" style="width:120px; padding:.5em; border-radius:8px; border:1px solid var(--line); background:var(--bg-deep); color:var(--ink); text-align:center;">
+                <button id="btn-factory-reset" style="padding:.6em 1.2em; border-radius:8px; background:#a3282d; color:#fff; border:none; cursor:pointer; font-weight:bold;">استعادة المصنع</button>
+            </div>
+        </div>
+      </div>
+      <!-- Appearance -->
+      <div id="set-appearance" class="set-pane" style="display:none;">
+        <h3>المظهر والخلفية</h3>
+        <p style="color:var(--ink-dim); margin-top:1em;">الخلفية العامة للتطبيق:</p>
+        <div style="display:flex;gap:1em;margin-top:.5em;">
+          <button id="btn-browse-wallpaper" style="padding:.6em 1.2em; border-radius:12px; background:var(--bg-deep); border:1px solid var(--line); color:var(--ink); cursor:pointer;">📁 اختيار صورة من الجهاز</button>
+          <button id="btn-clear-wallpaper" style="padding:.6em 1.2em; border-radius:12px; background:var(--line); border:none; color:var(--ink); cursor:pointer;">إزالة الخلفية</button>
+        </div>
+      </div>
+      <!-- Connectivity -->
+      <div id="set-connectivity" class="set-pane" style="display:none;">
+        <h3>حالة الاتصال</h3>
+        <div style="margin-top:1em; display:flex; flex-direction:column; gap:1em;">
+            <div style="background:var(--bg-deep); padding:1em; border-radius:12px; border:1px solid var(--line);">
+                <div style="color:var(--ink-dim);">الشبكة (Wi-Fi)</div>
+                <div id="set-wifi-status" style="font-size:1.2rem; font-weight:600;">جاري التحقق...</div>
+            </div>
+            <div style="background:var(--bg-deep); padding:1em; border-radius:12px; border:1px solid var(--line);">
+                <div style="color:var(--ink-dim);">البلوتوث (Bluetooth)</div>
+                <div id="set-bt-status" style="font-size:1.2rem; font-weight:600;">جاري التحقق...</div>
+            </div>
+        </div>
+      </div>
+      
+      <!-- Entertainment -->
+      <div id="set-ent" class="set-pane" style="display:none;">
+        <h3>إعدادات الترفيه والسينما 🎬</h3>
+        
+        <div class="setting-item">
+          <label for="set-ent-enabled">تفعيل قسم الترفيه</label>
+          <input type="checkbox" id="set-ent-enabled" checked>
+        </div>
+        
+        <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:0.5em; margin-top:2em;">
+          <label>مصدر البيانات (TMDB API Key)</label>
+          <div style="display:flex; align-items:center; gap:1em;">
+            <input type="radio" id="set-ent-api-default" name="ent_api" value="default" checked>
+            <label for="set-ent-api-default">استخدام مفتاح FAHAD TV الافتراضي</label>
+          </div>
+          <div style="display:flex; align-items:center; gap:1em;">
+            <input type="radio" id="set-ent-api-custom" name="ent_api" value="custom">
+            <label for="set-ent-api-custom">استخدام مفتاحي الخاص</label>
+          </div>
+          <input type="text" id="set-ent-tmdb-key" placeholder="أدخل مفتاح TMDB الخاص بك هنا..." style="width:100%; margin-top:0.5em; display:none; padding:0.8em; border-radius:8px; border:1px solid var(--line); background:var(--bg-deep); color:var(--ink);">
+        </div>
+        
+        <div class="setting-item" style="margin-top:2em;">
+          <label for="set-ent-region">منطقة العرض (لمعرفة توفر المسلسلات والأفلام)</label>
+          <select id="set-ent-region" style="background:var(--bg-deep);border:1px solid var(--line);border-radius:8px;padding:.5em 1em;color:var(--ink);outline:none;">
+            <option value="SA">السعودية (SA)</option>
+            <option value="US">الولايات المتحدة (US)</option>
+            <option value="AE">الإمارات (AE)</option>
+            <option value="EG">مصر (EG)</option>
+            <option value="GB">بريطانيا (GB)</option>
+          </select>
+        </div>
+        
+        <div class="setting-item" style="margin-top:2em; flex-direction:column; align-items:flex-start;">
+          <label>الأنواع المفضلة (Genres)</label>
+          <div id="ent-genres-container" style="display:flex; flex-wrap:wrap; gap:0.5em; margin-top:0.5em;">
+            <!-- Generated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage -->
+      <div id="set-storage" class="set-pane" style="display:none;">
+        <h3>التخزين والتخزين المؤقت</h3>
+        <div style="margin-top:1em; display:flex; flex-direction:column; gap:1em;">
+            <div style="background:var(--bg-deep); padding:1em; border-radius:12px; border:1px solid var(--line);">
+                <div style="color:var(--ink-dim);">أيقونات التطبيقات المؤقتة</div>
+                <div id="set-storage-icons" style="font-size:1.2rem; font-weight:600;">جاري التحقق...</div>
+            </div>
+            <div style="background:var(--bg-deep); padding:1em; border-radius:12px; border:1px solid var(--line);">
+                <div style="color:var(--ink-dim);">الخلفيات المؤقتة</div>
+                <div id="set-storage-wallpapers" style="font-size:1.2rem; font-weight:600;">جاري التحقق...</div>
+            </div>
+        </div>
+      </div>
+      <!-- About -->
+      <div id="set-about" class="set-pane" style="display:none;">
+        <h3>حول البرنامج</h3>
+        <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5;margin-top:1em;">FAHAD TV - الإصدار الاحترافي v1.36<br>مشغل تطبيقات التلفزيون الذكي لنظام ويندوز.</p>
+        <h4 style="margin-top:2em; color:var(--ink);">سجل التحديثات (Changelog)</h4>
+        <ul style="color:var(--ink-dim); font-size:.9rem; margin-top:.5em; margin-right:1.5em; line-height:1.6;">
+            <li>تحديث 1.36: مؤشر حالة الشبكة في أعلى الشاشة (واي فاي متصل/غير متصل مع اسم الشبكة، ومؤشر إيثرنت يظهر عند الاتصال السلكي)، ودعم يد التحكم داخل شاشة الإعدادات (تنقّل + تفعيل + إغلاق)، وزر جديد في الشريط العلوي لإعادة تشغيل التطبيق (بجانب زر الخروج)، بالإضافة لأيقونة على سطح المكتب لنفس الغرض. والمثبّت الآن يعرض خيار تثبيت Unified Remote للتحكم بـ FAHAD TV من الجوال. بالإضافة لتحسينات التحكم الشاملة — يد التحكم (بلايستيشن) والكيبورد يتنقّلان لكل عناصر الواجهة بما فيها الأزرار العلوية والتبويبات، مع إصلاح انعكاس الاتجاهات (يمين/يسار)، وتنقّل كامل داخل صفحات الترفيه والمباريات. وتعريب واجهة الترفيه، مؤشر مباشر نابض، تحميل كسول للصور، وشاشات "لا نتائج" أوضح. وإعادة هيكلة داخلية لتطوير أسهل وأكثر استقراراً.</li>
+            <li>تحديث 1.29: إصلاح جذري لقسم المباريات — الانتقال لمصدر بيانات ESPN المجاني (بدون مفتاح API) لعرض مباريات كأس العالم والدوريات الحالية بشكل فعلي، مع إصلاح قسم الترفيه الذي لم يكن يعمل بسبب عدم تحميل ملفاته البرمجية.</li>
+            <li>تحديث 1.26: إطلاق قسم الترفيه الاحترافي! واجهة مخصصة لاكتشاف أحدث الأفلام والمسلسلات، جدول الإصدارات، المنصات الناقلة، التريند اليومي والأسبوعي، بالإضافة لمحرك توصيات وقوائم مفضلة.</li>
+            <li>تحديث 1.25: تغيير نظام المباريات لعرض مباريات الشهر بالكامل (من أسبوع ماضي إلى 30 يوم قادمة) بدلاً من مقتصرة على مباريات اليوم فقط، مع نظام حفظ ذكي (Cache) لتقليل استهلاك الإنترنت.</li>
+            <li>تحديث 1.24: إصلاح مشكلة تداخل اختصارات لوحة المفاتيح أثناء البحث، وتوضيح ألوان أزرار حفظ البطولات.</li>
+            <li>تحديث 1.23: نقل ملفات الحفظ والإعدادات المؤقتة إلى المسار الرسمي في ويندوز (LOCALAPPDATA) لتحسين الأداء وحل مشاكل الصلاحيات.</li>
+            <li>تحديث 1.22: إصلاح مشكلة عدم ظهور الدوريات (مشكلة صلاحيات التخزين في الويندوز).</li>
+            <li>تحديث 1.21: تحديثات وتعديلات لتحسين الواجهة الرياضية وحل بعض المشاكل التقنية.</li>
+            <li>تحديث 1.18: إضافة قسم خاص لمتابعة المباريات الرياضية (Sports).</li>
+            <li>تحديث واجهة المستخدم الرئيسية لفصل التطبيقات والمفضلة.</li>
+            <li>إضافة التطبيقات المستخدمة مؤخراً.</li>
+            <li>تحسين استيراد التطبيقات وتحديد أكثر من تطبيق دفعة واحدة.</li>
+            <li>عرض حالة الشبكة والبلوتوث في الإعدادات.</li>
+            <li>تحسين البحث ليشمل تطبيقات ويندوز.</li>
+        </ul>
+      </div>
+
+      <div class="actions" style="margin-top:2.5em; border-top:1px solid var(--line); padding-top:1em;">
+        <button class="btn-save" id="btn-save-settings">حفظ الإعدادات</button>
+        <button class="btn-cancel" id="btn-close-settings">إغلاق</button>
+      </div>
     </div>
   </div>
 </div>
@@ -324,6 +379,7 @@
 <!-- Context Menu -->
 <div id="ctxMenu">
   <button class="ctx-item" data-action="launch">▶️ تشغيل</button>
+  <button class="ctx-item" data-action="toggle_favorite">⭐ أضف للمفضلة</button>
   <button class="ctx-item" data-action="edit">✏️ تعديل</button>
   <button class="ctx-item" data-action="rename">🏷️ إعادة تسمية</button>
   <button class="ctx-item" data-action="change_icon">🖼️ تغيير الأيقونة</button>
@@ -341,846 +397,45 @@
   <div id="search-results" style="display:flex;gap:1.5vw;flex-wrap:wrap;overflow-y:auto;"></div>
 </div>
 
-<script>
-
-/* سيتم ملؤها من backend عبر get_rows() */
-let ROWS = [
-
-  { label:"التطبيقات والترفيه", apps:[
-    { id:"netflix", name:"نتفلكس", sub:"Netflix", glyph:"🎬", c1:"#8f1f24", c2:"#4a0f12", img:"" },
-    { id:"media", name:"مشغل الوسائط", sub:"Media Player", glyph:"🎵", c1:"#1f7a72", c2:"#0f423d", img:"" },
-    { id:"settings", name:"الإعدادات", sub:"Settings", glyph:"⚙️", c1:"#565d6b", c2:"#2e323b", img:"" },
-  ]},
-  { label:"الوصول السريع", apps:[
-    { id:"browser", name:"المتصفح", sub:"Google Chrome", glyph:"🌐", c1:"#1d5c8f", c2:"#12395c", img:"" },
-    { id:"youtube", name:"يوتيوب", sub:"YouTube", glyph:"▶️", c1:"#a3282d", c2:"#5e1518", img:"" },
-    { id:"files", name:"مستكشف الملفات", sub:"File Explorer", glyph:"📁", c1:"#a67c1e", c2:"#5f470f", img:"" },
-  ]},
-  { label:"ألعابي", apps:[
-    { id:"steam", name:"مكتبة الألعاب", sub:"Steam", glyph:"🎮", c1:"#31566e", c2:"#1b3242", img:"" },
-  ]},
-];
-
-const GLYPHS = ["🌐","🎮","🎬","🎵","📁","⚙️","📺","🕹️","🎧","📷","💬","📚","🏃","🧩","📌"];
-const rowsEl = document.getElementById("rows");
-let pos = { row:0, col:0 };
-
-async function resolveImage(img) {
-  if(!img) return "";
-  if(img.startsWith("http") || img.startsWith("data:")) return img;
-  if(window.pywebview && window.pywebview.api) {
-    try {
-      const b64 = await window.pywebview.api.read_image(img);
-      if(b64) return b64;
-    } catch(e) {}
-  }
-  // fallback: try file:// URI
-  const p = String(img).replace(/\\/g,"/");
-  if(/^[a-zA-Z]:/.test(p)) return "file:///" + encodeURI(p);
-  return p;
-}
-
-/* ============ البناء والعرض ============ */
-function build(){
-  rowsEl.innerHTML = "";
-  ROWS.forEach((row, r) => {
-    const section = document.createElement("section");
-    section.className = "row";
-    section.innerHTML = `
-      <div class="row-label" style="display:flex;justify-content:center;align-items:center;gap:.5em;">
-        ${row.label}
-        <button style="background:none;border:none;color:var(--ink-dim);cursor:pointer;" onclick="renameRow(${r})">✏️</button>
-        <button style="background:none;border:none;color:var(--ink-dim);cursor:pointer;" onclick="moveRow(${r}, true)">⬆️</button>
-        <button style="background:none;border:none;color:var(--ink-dim);cursor:pointer;" onclick="moveRow(${r}, false)">⬇️</button>
-        <button style="background:none;border:none;color:#ff6b6b;cursor:pointer;" onclick="deleteRow(${r})">🗑</button>
-      </div>`;
-    const tiles = document.createElement("div");
-    tiles.className = "tiles";
-    row.apps.forEach((app, c) => {
-      const b = document.createElement("button");
-      b.className = "tile";
-
-      b.style.setProperty("--glow", (app.c1||"#ffffff") + "66");
-      b.dataset.row = r; b.dataset.col = c;
-      const bg = app.backgroundPath || app.img;
-      const ic = app.iconPath;
-      
-      b.style.background = `linear-gradient(145deg, ${app.c1||"#31566e"}, ${app.c2||"#1b3242"})`;
-      
-      if(bg){
-        resolveImage(bg).then(data => {
-          if(data) b.style.background = `linear-gradient(rgba(10,12,16,.1), rgba(10,12,16,.6)), url("${data}") center/cover no-repeat`;
-        });
-      }
-      
-      let visualHtml = bg ? "" : `<span class="glyph">${app.glyph || ""}</span>`;
-      b.innerHTML = `${visualHtml}
-                     <span class="name">${app.name}</span>
-                     <span class="sub">${app.sub || ""}</span>
-                     <div class="actions-overlay">
-                       <button onclick="event.stopPropagation(); launch(ROWS[${r}].apps[${c}])">▶</button>
-                       <button onclick="event.stopPropagation(); openDialog('edit', ROWS[${r}].apps[${c}])">✏</button>
-                       <button onclick="event.stopPropagation(); pos={row:${r},col:${c}}; requestDelete()">🗑</button>
-                     </div>`;
-                     
-      if(!bg && ic) {
-        resolveImage(ic).then(data => {
-          if(data) {
-            const imgEl = document.createElement("img");
-            imgEl.src = data;
-            imgEl.style.cssText = "position:absolute;top:1em;inset-inline-start:1em;width:48px;height:48px;object-fit:contain;border-radius:8px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));";
-            b.appendChild(imgEl);
-          }
-        });
-      }
-
-      b.addEventListener("click", () => { pos={row:r,col:c}; render(); launch(app); });
-      tiles.appendChild(b);
-    });
-    const plus = document.createElement("button");
-    plus.className = "tile add";
-    plus.dataset.row = r; plus.dataset.col = row.apps.length;
-    plus.innerHTML = `<span class="plus">＋</span><span class="name">إضافة تطبيق</span>`;
-    plus.addEventListener("click", () => { pos={row:r,col:row.apps.length}; render(); openDialog("add"); });
-    tiles.appendChild(plus);
-    section.appendChild(tiles);
-    rowsEl.appendChild(section);
-  });
-  
-  const addRowBtn = document.createElement("button");
-  addRowBtn.style.cssText = "margin:1em auto;padding:.5em 1.5em;background:var(--bg-deep);border:1px dashed var(--line);color:var(--ink-dim);border-radius:12px;cursor:pointer;";
-  addRowBtn.textContent = "＋ صف جديد";
-  addRowBtn.onclick = async () => {
-    const name = prompt("اسم الصف الجديد:");
-    if(!name) return;
-    if(window.pywebview) {
-      const r = await window.pywebview.api.add_row(name);
-      if(r.ok) { ROWS = r.rows; build(); }
-    } else {
-      ROWS.push({label:name, apps:[]}); build();
-    }
-  };
-  rowsEl.appendChild(addRowBtn);
-
-  pos.row = Math.min(pos.row, ROWS.length-1);
-  if(ROWS.length > 0) pos.col = Math.min(pos.col, ROWS[pos.row].apps.length);
-  render();
-  wireTileContext();
-  wireTileDragDrop();
-}
-
-async function renameRow(r){
-  const name = prompt("تعديل اسم الصف:", ROWS[r].label);
-  if(!name) return;
-  if(window.pywebview){
-    const res = await window.pywebview.api.rename_row(r, name);
-    if(res.ok){ ROWS = res.rows; build(); }
-  }
-}
-async function moveRow(r, up){
-  if(window.pywebview){
-    const res = await window.pywebview.api.move_row(r, up);
-    if(res.ok){ ROWS = res.rows; build(); }
-  }
-}
-async function deleteRow(r){
-  if(confirm("حذف هذا الصف وكل ما فيه؟")){
-    if(window.pywebview){
-      const res = await window.pywebview.api.delete_row(r);
-      if(res.ok){ ROWS = res.rows; build(); }
-    }
-  }
-}
-
-
-function colCount(r){ return ROWS[r].apps.length + 1; }
-function currentApp(){ return ROWS[pos.row].apps[pos.col] || null; }
-
-function getAppByRC(r,c){
-  if(!ROWS[r] || !ROWS[r].apps) return null;
-  return ROWS[r].apps[c] || null;
-}
-
-function findRCByAppId(appId){
-  for(let r=0;r<ROWS.length;r++){
-    const idx = (ROWS[r].apps||[]).findIndex(a=>a.id===appId);
-    if(idx>=0) return {r, c: idx};
-  }
-  return null;
-}
-
-
-function render(){
-  document.querySelectorAll(".tile").forEach(t=>{
-    const f = +t.dataset.row===pos.row && +t.dataset.col===pos.col;
-    t.classList.toggle("focused", f);
-    if(f) t.scrollIntoView({block:"nearest", inline:"center", behavior:"smooth"});
-  });
-  document.querySelectorAll(".row").forEach((s,i)=>s.classList.toggle("active", i===pos.row));
-  const app = currentApp();
-  const ambient = document.getElementById("ambient");
-  if(app) {
-     const bg = app.backgroundPath || app.img;
-     if(bg) {
-       resolveImage(bg).then(data => {
-         if(data && currentApp() === app) {
-           ambient.style.background = `url("${data}") center/cover no-repeat`;
-           ambient.style.filter = "blur(30px)";
-           ambient.style.opacity = "0.4";
-         }
-       });
-     } else if(app.c1) {
-       ambient.style.background = `radial-gradient(700px 500px at 50% 60%, ${app.c1}33, transparent 70%)`;
-       ambient.style.filter = "none";
-       ambient.style.opacity = "0.35";
-     } else {
-       ambient.style.background = "none";
-       ambient.style.filter = "none";
-     }
-  } else {
-     ambient.style.background = "none";
-     ambient.style.filter = "none";
-  }
-}
-
-function move(dx, dy){
-  if(dy){ pos.row = Math.min(Math.max(pos.row+dy,0), ROWS.length-1);
-          pos.col = Math.min(pos.col, colCount(pos.row)-1); }
-  if(dx){ pos.col = Math.min(Math.max(pos.col+dx,0), colCount(pos.row)-1); }
-  render();
-}
-
-/* ============ التنبيهات ============ */
-let toastTimer;
-function toast(msg){
-  const t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove("show"), 3000);
-}
-
-/* ============ التشغيل ============ */
-async function launch(app){
-
-  if(!app){ openDialog("add"); return; }
-  
-  // Intercept settings app ID
-  if(app.id === "settings_fahadtv"){
-    openSettings();
-    return;
-  }
-  if(app.id === "power_fahadtv"){
-    document.getElementById("power-dialog").style.display = "flex";
-    return;
-  }
-
-  toast(`جارٍ تشغيل ${app.name}…`);
-  if(window.pywebview && window.pywebview.api){
-    try{
-      const r = await window.pywebview.api.launch(app.id);
-      if(!r.ok) toast(r.msg || "فشل التشغيل");
-    }catch{ toast("فشل التشغيل"); }
-  }else{
-    toast("وضع المعاينة — التشغيل الفعلي يكون من التطبيق (HTPCLauncher.exe)");
-  }
-}
-
-/* ============ نافذة الإضافة/تعديل ============ */
-const dlg = document.getElementById("dialog");
-let dlgGlyph = GLYPHS[0];
-let dlgImg = "";        /* "" = بدون تغيير/بدون صورة، "none" = إزالة، رابط = صورة جديدة */
-let editingId = null;   /* null = وضع الإضافة */
-
-function renderGlyphs(){
-  const g = document.getElementById("dlg-glyphs");
-  g.innerHTML = "";
-  GLYPHS.forEach(gl=>{
-    const b = document.createElement("button");
-    b.textContent = gl;
-    b.classList.toggle("sel", gl===dlgGlyph);
-    b.addEventListener("click", ()=>{ dlgGlyph = gl;
-      g.querySelectorAll("button").forEach(x=>x.classList.toggle("sel", x.textContent===gl)); });
-    g.appendChild(b);
-  });
-}
-
-function renderImgResults(list){
-  const box = document.getElementById("dlg-img-results");
-  box.innerHTML = "";
-  list.forEach(item=>{
-    const im = document.createElement("img");
-    im.src = item.url; im.title = item.name || "";
-    im.addEventListener("click", ()=>{
-      dlgImg = item.url;
-      box.querySelectorAll("img").forEach(x=>x.classList.toggle("sel", x===im));
-    });
-    box.appendChild(im);
-  });
-}
-
-async function doImgSearch(){
-  const q = document.getElementById("dlg-img-q").value.trim();
-  if(!q) return;
-  if(q.startsWith("http")){        /* رابط صورة مباشر */
-    dlgImg = q;
-    renderImgResults([{url:q, name:"رابط مباشر"}]);
-    document.querySelector("#dlg-img-results img")?.classList.add("sel");
-    return;
-  }
-  if(!(window.pywebview && window.pywebview.api)){
-    toast("البحث عن الصور متاح داخل التطبيق فقط — الصق رابط صورة بدلًا منه");
-    return;
-  }
-  toast("جارٍ البحث…");
-  try{
-    const r = await window.pywebview.api.search_images(q);
-    if(r.ok) renderImgResults(r.results);
-    else toast(r.msg || "ما لقيت صور");
-  }catch{ toast("فشل البحث"); }
-}
-document.getElementById("dlg-img-btn").addEventListener("click", doImgSearch);
-document.getElementById("dlg-img-q").addEventListener("keydown", e=>{
-  if(e.key==="Enter"){ doImgSearch(); e.preventDefault(); }
-});
-document.getElementById("dlg-img-remove").addEventListener("click", ()=>{
-  dlgImg = "none";
-  document.getElementById("dlg-img-results").innerHTML = "";
-  toast("بتنشال الصورة عند الحفظ");
-});
-
-document.getElementById("dlg-browse-exe")?.addEventListener("click", async ()=>{
-  if(window.pywebview && window.pywebview.api){
-    const r = await window.pywebview.api.browse_file("exe");
-    if(r.ok) document.getElementById("dlg-path").value = r.path;
-  }
-});
-document.getElementById("dlg-browse-icon")?.addEventListener("click", async ()=>{
-  if(window.pywebview && window.pywebview.api){
-    const r = await window.pywebview.api.browse_file("icon");
-    if(r.ok){
-      dlgImg = r.path;
-      document.getElementById("dlg-img-q").value = r.path;
-    }
-  }
-});
-
-function openDialog(mode, app){
-  editingId = mode==="edit" && app ? app.id : null;
-  dlgImg = "";
-  document.getElementById("dlg-title").textContent = editingId ? `تعديل: ${app.name}` : "إضافة تطبيق";
-  
-  const rowSelect = document.getElementById("dlg-row-select");
-  rowSelect.innerHTML = "";
-  ROWS.forEach((r, idx) => {
-    const opt = document.createElement("option");
-    opt.value = idx;
-    opt.textContent = r.label;
-    if(editingId && findRCByAppId(app.id)?.r === idx) opt.selected = true;
-    else if(!editingId && pos.row === idx) opt.selected = true;
-    rowSelect.appendChild(opt);
-  });
-  
-  document.getElementById("dlg-name").value = editingId ? app.name : "";
-  document.getElementById("dlg-path").value = editingId ? (typeof app.target==="string" ? app.target : "") : "";
-  document.getElementById("dlg-img-q").value = "";
-  document.getElementById("dlg-img-results").innerHTML = "";
-  document.getElementById("dlg-glyph").value = editingId ? (app.glyph||"") : "";
-  document.getElementById("dlg-c1").value = editingId ? (app.c1 || "#31566e") : "#31566e";
-  document.getElementById("dlg-c2").value = editingId ? (app.c2 || "#1b3242") : "#1b3242";
-  document.getElementById("dlg-img-remove").style.display = (editingId && (app.backgroundPath || app.img)) ? "inline" : "none";
-  dlgGlyph = editingId ? (app.glyph || GLYPHS[0]) : GLYPHS[0];
-
-  renderGlyphs();
-  dlg.classList.add("open");
-  setTimeout(()=>document.getElementById("dlg-name").focus(), 50);
-}
-function closeDialog(){ dlg.classList.remove("open"); editingId = null; }
-
-document.getElementById("dlg-cancel").addEventListener("click", closeDialog);
-document.getElementById("dlg-save").addEventListener("click", async ()=>{
-  const name = document.getElementById("dlg-name").value.trim();
-  const path = document.getElementById("dlg-path").value.trim();
-  const newRowIdx = parseInt(document.getElementById("dlg-row-select").value);
-  const c1 = document.getElementById("dlg-c1").value;
-  const c2 = document.getElementById("dlg-c2").value;
-  const inApp = window.pywebview && window.pywebview.api;
-
-  if(editingId){
-    if(inApp){
-      toast("جارٍ الحفظ…");
-      const r = await window.pywebview.api.update_app(editingId, name, path, dlgGlyph, dlgImg, "", newRowIdx, c1, c2);
-
-      if(r.ok){ ROWS = r.rows; closeDialog(); build(); toast("تم التعديل ✓"); }
-      else toast(r.msg || "ما قدرت أعدّله");
-    }else{
-      const row = ROWS.find(r=>r.apps.some(a=>a.id===editingId));
-      if(row){
-        const app = row.apps.find(a=>a.id===editingId);
-        app.name=name; app.target=path; app.glyph=dlgGlyph; app.c1=c1; app.c2=c2;
-        if(dlgImg==="none"){ app.img=""; app.backgroundPath=""; } else if(dlgImg) app.img=dlgImg; }
-      closeDialog(); build(); toast("تم التعديل (وضع المعاينة)");
-    }
-    return;
-  }
-
-  if(!name || !path){ toast("لازم تكتب الاسم والمسار"); return; }
-  if(inApp){
-    toast("جارٍ الإضافة…");
-    const r = await window.pywebview.api.add_app(newRowIdx, name, path, dlgGlyph, dlgImg, "", c1, c2);
-    if(r.ok){ ROWS = r.rows; closeDialog(); build(); toast(`انضاف ${name} ✓`); }
-    else toast(r.msg || "ما قدرت أضيفه");
-  }else{
-    ROWS[newRowIdx].apps.push({ id:"tmp_"+Date.now(), name, sub:path, glyph:dlgGlyph,
-      c1:c1, c2:c2, img: dlgImg && dlgImg!=="none" ? dlgImg : "" });
-    closeDialog(); build(); toast(`انضاف ${name} (مؤقتًا — وضع المعاينة)`);
-  }
-});
-
-/* ============ حذف تطبيق (Delete مرتين) ============ */
-let pendingDelete = null, pendingTimer;
-async function requestDelete(){
-  const app = currentApp();
-  if(!app) return;
-  if(pendingDelete === app.id){
-    clearTimeout(pendingTimer); pendingDelete = null;
-    if(window.pywebview && window.pywebview.api){
-      const r = await window.pywebview.api.remove_app(app.id);
-      if(r.ok){ ROWS = r.rows; build(); toast(`انحذف ${app.name}`); }
-      else toast(r.msg || "ما قدرت أحذفه");
-    }else{
-      ROWS[pos.row].apps.splice(pos.col, 1); build(); toast(`انحذف ${app.name} (وضع المعاينة)`);
-    }
-  }else{
-    pendingDelete = app.id;
-    toast(`اضغط Delete مرة ثانية لحذف ${app.name}`);
-    clearTimeout(pendingTimer);
-    pendingTimer = setTimeout(()=>{ pendingDelete = null; }, 3000);
-  }
-}
-
-/* ============ Context Menu: Right Click ============ */
-let ctxState = { app: null, rc: null };
-const ctxEl = document.getElementById("ctxMenu");
-
-function closeCtx(){
-  ctxEl.classList.remove("show");
-  ctxState.app = null;
-  ctxState.rc = null;
-}
-
-function openCtxForApp(app, rc, clientX, clientY){
-  if(!app) return;
-  ctxState.app = app;
-  ctxState.rc = rc;
-
-  // Position (keep inside viewport)
-  const pad = 10;
-  const w = ctxEl.offsetWidth || 320;
-  const h = ctxEl.offsetHeight || 260;
-  let x = clientX;
-  let y = clientY;
-  if(x + w + pad > window.innerWidth) x = window.innerWidth - w - pad;
-  if(y + h + pad > window.innerHeight) y = window.innerHeight - h - pad;
-  if(x < pad) x = pad;
-  if(y < pad) y = pad;
-
-  ctxEl.style.left = x + "px";
-  ctxEl.style.top = y + "px";
-  ctxEl.classList.add("show");
-}
-
-document.addEventListener("click", (e)=>{
-  // click outside
-  if(ctxEl.classList.contains("show") && !ctxEl.contains(e.target)) closeCtx();
-});
-
-document.addEventListener("contextmenu", (e)=>{
-  // right click on a tile -> open our Fluent context menu
-  const tile = e.target && e.target.closest ? e.target.closest(".tile") : null;
-  if(!tile) return;
-
-  e.preventDefault();
-
-  const rc = tileRCFromEl(tile);
-  const app = getAppByRC(rc.r, rc.c);
-  if(!app) return;
-
-  openCtxForApp(app, rc, e.clientX, e.clientY);
-});
-
-function tileRCFromEl(el){
-  return { r: +el.dataset.row, c: +el.dataset.col };
-}
-
-function wireTileDragDrop(){
-  const tiles = document.querySelectorAll(".tile");
-  tiles.forEach(el=>{
-    if(el.classList.contains("add")) return;
-
-    el.draggable = true;
-
-    el.addEventListener("dragstart", (ev)=>{
-      const rc = tileRCFromEl(el);
-      const app = getAppByRC(rc.r, rc.c);
-      if(!app) return;
-      ev.dataTransfer.effectAllowed = "move";
-      ev.dataTransfer.setData("text/plain", JSON.stringify({ appId: app.id, fromR: rc.r, fromC: rc.c }));
-      el.classList.add("dragging");
-    });
-
-    el.addEventListener("dragend", ()=>{
-      el.classList.remove("dragging");
-      document.querySelectorAll(".tile.drag-over").forEach(x=>x.classList.remove("drag-over"));
-    });
-
-    el.addEventListener("dragover", (ev)=>{
-      if(!ev.dataTransfer) return;
-      ev.preventDefault(); // allow drop
-      el.classList.add("drag-over");
-      ev.dataTransfer.dropEffect = "move";
-    });
-
-    el.addEventListener("dragleave", ()=>{
-      el.classList.remove("drag-over");
-    });
-
-    el.addEventListener("drop", async (ev)=>{
-      ev.preventDefault();
-      el.classList.remove("drag-over");
-
-      const raw = ev.dataTransfer.getData("text/plain");
-      if(!raw) return;
-
-      let payload = null;
-      try{ payload = JSON.parse(raw); }catch{ payload = null; }
-      if(!payload) return;
-
-      const toRc = tileRCFromEl(el);
-
-      if(payload.appId && window.pywebview && window.pywebview.api){
-        toast("جارٍ النقل…");
-        const r = await window.pywebview.api.reorder_app(payload.appId, payload.fromR, payload.fromC, toRc.r, toRc.c);
-        if(r.ok){
-          ROWS = r.rows;
-          build();
-          toast("تم الترتيب ✓");
-        }else{
-          toast(r.msg || "فشل الترتيب");
-        }
-      }else{
-        // preview mode fallback
-        const fromRow = ROWS[payload.fromR];
-        const toRow = ROWS[toRc.r];
-        const item = fromRow.apps.splice(payload.fromC,1)[0];
-        toRow.apps.splice(toRc.c,0,item);
-        build();
-        toast("تم الترتيب (معاينة)");
-      }
-    });
-  });
-}
-
-async function ctxAction(action){
-  const app = ctxState.app;
-  const rc = ctxState.rc;
-  if(!app || !rc) return;
-
-  switch(action){
-    case "launch":
-      closeCtx();
-      launch(app);
-      return;
-    case "edit":
-      closeCtx();
-      openDialog("edit", app);
-      return;
-    case "rename":
-      closeCtx();
-      openDialog("edit", app);
-      return;
-    case "change_icon":
-      closeCtx();
-      openDialog("edit", app);
-      return;
-    case "change_background":
-      closeCtx();
-      openDialog("edit", app);
-      return;
-    case "move":
-      closeCtx();
-      toast("استخدم السحب لإعادة الترتيب/النقل (Drag & Drop)");
-      return;
-    case "duplicate":
-      if(window.pywebview && window.pywebview.api){
-        const newName = app.name + " (نسخة)";
-        // duplicate = add new app same target/background/icon/glyph
-        // stage-1: reuse add_app and then patch fields via update_app if needed
-        const rIndex = rc.r;
-        const r = await window.pywebview.api.add_app(rIndex, newName, typeof app.target==='string'?app.target:"", app.glyph||"📌", app.backgroundPath||"", "");
-        if(r.ok){ ROWS = r.rows; build(); toast("تم النسخ ✓"); }
-        else toast(r.msg || "فشل النسخ");
-      }else{
-        const newId = "tmp_"+Date.now();
-        const copy = JSON.parse(JSON.stringify(app));
-        copy.id = newId;
-        copy.name = app.name + " (نسخة)";
-        ROWS[rc.r].apps.splice(rc.c+1, 0, copy);
-        closeCtx(); build(); toast("تم النسخ (معاينة)");
-      }
-      return;
-    case "remove_from_home":
-    case "delete_shortcut":
-      // In this project: same as remove application from home
-      closeCtx();
-      pos = {row: rc.r, col: rc.c};
-      requestDelete();
-      return;
-    case "properties":
-      closeCtx();
-      toast(`الخصائص: ${app.name}`);
-      return;
-  }
-}
-
-document.querySelectorAll("#ctxMenu .ctx-item").forEach(btn=>{
-  btn.addEventListener("click", async ()=>{
-    const action = btn.dataset.action;
-    await ctxAction(action);
-  });
-});
-
-/* ============ لوحة المفاتيح / الريموت ============ */
-let enterPressTimer = null;
-let isEnterHeld = false;
-
-document.addEventListener("keyup", e => {
-  if (e.key === "Enter" && isEnterHeld) {
-    isEnterHeld = false;
-    if(enterPressTimer) {
-      clearTimeout(enterPressTimer);
-      enterPressTimer = null;
-      if(!dlg.classList.contains("open") && document.getElementById("settings-dialog").style.display !== "flex") {
-         launch(currentApp());
-      }
-    }
-  }
-});
-
-document.addEventListener("keydown", e=>{
-
-  if(dlg.classList.contains("open")){
-    if(e.key === "Escape"){ closeDialog(); e.preventDefault(); }
-    return;
-  }
-  
-  if (e.key === "Enter") {
-    if(!isEnterHeld) {
-      isEnterHeld = true;
-      enterPressTimer = setTimeout(() => {
-        enterPressTimer = null;
-        const app = currentApp();
-        if(app && !dlg.classList.contains("open")) {
-          openDialog("edit", app);
-        }
-      }, 600);
-    }
-    e.preventDefault();
-    return;
-  }
-
-  switch(e.key){
-    case "ArrowRight":
-      if(e.ctrlKey){ moveAppInRow("left"); e.preventDefault(); break; }
-      move(-1,0); e.preventDefault(); break;
-    case "ArrowLeft":
-      if(e.ctrlKey){ moveAppInRow("right"); e.preventDefault(); break; }
-      move(+1,0); e.preventDefault(); break;
-    case "ArrowUp":    move(0,-1); e.preventDefault(); break;
-    case "ArrowDown":  move(0,+1); e.preventDefault(); break;
-    case "Delete":     requestDelete(); e.preventDefault(); break;
-    case "e": case "E":
-      { const app = currentApp(); if(app){ openDialog("edit", app); e.preventDefault(); } }
-      break;
-    case "q": case "Q":
-      if(e.ctrlKey && window.pywebview){ window.pywebview.api.quit(); e.preventDefault(); }
-      break;
-  }
-});
-
-/* ============ تحريك التطبيق يمين/يسار ============ */
-async function moveAppInRow(direction) {
-  const app = currentApp();
-  if(!app) return;
-  if(window.pywebview && window.pywebview.api) {
-    const r = await window.pywebview.api.move_app(app.id, direction);
-    if(r.ok) {
-      ROWS = r.rows;
-      pos.col = r.newCol;
-      build();
-      toast(direction === "left" ? "⬅️ تم التحريك" : "➡️ تم التحريك");
-    } else {
-      toast(r.msg || "ما يقدر يتحرك");
-    }
-  } else {
-    const apps = ROWS[pos.row].apps;
-    const idx = pos.col;
-    if(direction === "left" && idx > 0) {
-      [apps[idx], apps[idx-1]] = [apps[idx-1], apps[idx]];
-      pos.col = idx - 1;
-    } else if(direction === "right" && idx < apps.length - 1) {
-      [apps[idx], apps[idx+1]] = [apps[idx+1], apps[idx]];
-      pos.col = idx + 1;
-    } else {
-      toast("ما يقدر يتحرك أكثر"); return;
-    }
-    build();
-    toast(direction === "left" ? "⬅️ تم التحريك" : "➡️ تم التحريك");
-  }
-}
-
-// Search Logic
-const searchDialog = document.getElementById("search-dialog");
-const searchInput = document.getElementById("search-input");
-const searchResults = document.getElementById("search-results");
-
-document.addEventListener("keydown", e => {
-  if(!dlg.classList.contains("open") && document.getElementById("settings-dialog").style.display !== "flex" && document.getElementById("power-dialog").style.display !== "flex") {
-    if(e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey && searchDialog.style.display !== "flex") {
-      searchDialog.style.display = "flex";
-      searchInput.value = "";
-      searchInput.focus();
-    }
-  }
-  if(searchDialog.style.display === "flex" && e.key === "Escape") {
-    searchDialog.style.display = "none";
-    e.preventDefault();
-  }
-});
-searchInput.addEventListener("input", () => {
-  const q = searchInput.value.trim().toLowerCase();
-  searchResults.innerHTML = "";
-  if(!q) return;
-  ROWS.forEach(row => {
-    row.apps.forEach(app => {
-      if(app.name.toLowerCase().includes(q) || (app.sub && app.sub.toLowerCase().includes(q))) {
-        const b = document.createElement("button");
-        b.className = "tile";
-        b.style.background = `linear-gradient(145deg, ${app.c1||"#31566e"}, ${app.c2||"#1b3242"})`;
-        const sBg = app.backgroundPath || app.img;
-        if(sBg) {
-          resolveImage(sBg).then(data => {
-            if(data) b.style.background = `linear-gradient(rgba(10,12,16,.1), rgba(10,12,16,.6)), url("${data}") center/cover no-repeat`;
-          });
-        }
-        b.innerHTML = `<span class="name">${app.name}</span>`;
-        b.onclick = () => { launch(app); searchDialog.style.display = "none"; };
-        searchResults.appendChild(b);
-      }
-    });
-  });
-});
-
-/* ============ يد التحكم (Gamepad API) ============ */
-let padCooldown = 0;
-function pollGamepad(ts){
-  const gp = navigator.getGamepads && navigator.getGamepads()[0];
-  if(gp && ts - padCooldown > 180 && !dlg.classList.contains("open") && document.getElementById("settings-dialog").style.display !== "flex" && document.getElementById("power-dialog").style.display !== "flex"){
-    const ax = gp.axes[0]||0, ay = gp.axes[1]||0;
-    let acted = true;
-    if(gp.buttons[14]?.pressed || ax < -0.6) move(-1,0);
-    else if(gp.buttons[15]?.pressed || ax > 0.6) move(+1,0);
-    else if(gp.buttons[12]?.pressed || ay < -0.6) move(0,-1);
-    else if(gp.buttons[13]?.pressed || ay > 0.6) move(0,+1);
-    else if(gp.buttons[0]?.pressed) launch(currentApp());
-    else acted = false;
-    if(acted) padCooldown = ts;
-  }
-  requestAnimationFrame(pollGamepad);
-}
-
-async function openSettings() {
-  if (window.pywebview && window.pywebview.api) {
-    const r = await window.pywebview.api.get_settings();
-    document.getElementById("set-startup").checked = r.start_with_windows;
-    document.getElementById("set-fullscreen").checked = r.fullscreen !== false;
-  }
-  document.getElementById("settings-dialog").style.display = "flex";
-}
-
-document.getElementById("btn-close-settings").addEventListener("click", () => {
-  document.getElementById("settings-dialog").style.display = "none";
-});
-
-document.getElementById("btn-save-settings").addEventListener("click", async () => {
-  const start = document.getElementById("set-startup").checked;
-  const fs = document.getElementById("set-fullscreen").checked;
-  if (window.pywebview && window.pywebview.api) {
-    await window.pywebview.api.update_settings({ start_with_windows: start, fullscreen: fs });
-    toast("تم حفظ إعدادات FAHAD TV");
-  }
-  document.getElementById("settings-dialog").style.display = "none";
-});
-
-// Replace initial settings tile with FAHAD TV Settings
-const initInterval = setInterval(() => {
-  if (ROWS.length > 0) {
-    const r0 = ROWS[0];
-    if(r0 && r0.apps) {
-      let setApp = r0.apps.find(a => a.id === "settings");
-      if(setApp) {
-        setApp.id = "settings_fahadtv";
-        setApp.name = "إعدادات FAHAD TV";
-        setApp.sub = "Settings";
-        setApp.glyph = "⚙️";
-        setApp.target = "";
-        
-        // Add Power Menu tile
-        if(!r0.apps.find(a => a.id === "power_fahadtv")) {
-          r0.apps.push({
-            id: "power_fahadtv", name: "الطاقة", sub: "Power", glyph: "⏻", c1: "#8f1f24", c2: "#4a0f12", target: ""
-          });
-        }
-        build();
-      }
-    }
-    clearInterval(initInterval);
-  }
-}, 500);
-
-/* ============ الساعة ============ */
-function tick(){
-  const now = new Date();
-  let h = now.getHours(), m = String(now.getMinutes()).padStart(2,"0");
-  const period = h >= 12 ? "مساءً" : "صباحًا";
-  h = h % 12 || 12;
-  document.getElementById("clock-time").textContent = `${h}:${m}`;
-  document.getElementById("clock-period").textContent = period;
-  document.getElementById("clock-date").textContent =
-    now.toLocaleDateString("ar-SA-u-nu-latn", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
-}
-tick(); setInterval(tick, 1000);
-
-let mouseTimer;
-document.addEventListener("mousemove", ()=>{
-  document.body.classList.add("mouse-on");
-  clearTimeout(mouseTimer);
-  mouseTimer = setTimeout(()=>document.body.classList.remove("mouse-on"), 2500);
-});
-
-/* ============ الإقلاع ============ */
-let started = false;
-async function init(){
-  if(started) return; started = true;
-  if(window.pywebview && window.pywebview.api){
-    try{ ROWS = await window.pywebview.api.get_rows(); }catch(e){
-      console.error(e);
-    }
-  }
-
-  build();
-}
-window.addEventListener("pywebviewready", init);
-setTimeout(init, 400);
-</script>
+<!-- Import Dialog -->
+<div id="import-dialog" style="position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(10,12,16,.9);backdrop-filter:blur(10px);">
+  <div class="card" style="width:min(900px, 95vw); max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="padding:1.5em; border-bottom:1px solid var(--line); background:var(--bg-deep);">
+      <h2 style="margin:0; font-size:1.3rem;">استيراد التطبيقات والألعاب</h2>
+    </div>
+    
+    <div style="flex:1; overflow-y:auto; padding:1em;">
+      <table id="import-table" style="width:100%; border-collapse:collapse; text-align:right;">
+        <thead style="background:var(--bg-deep); position:sticky; top:0;">
+          <tr>
+            <th style="padding:.8em; border-bottom:1px solid var(--line); width:40px;"><input type="checkbox" id="import-select-all" style="transform:scale(1.2); cursor:pointer;"></th>
+            <th style="padding:.8em; border-bottom:1px solid var(--line);">الاسم</th>
+            <th style="padding:.8em; border-bottom:1px solid var(--line);">المسار</th>
+          </tr>
+        </thead>
+        <tbody id="import-tbody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+      <div id="import-loading" style="display:none; text-align:center; padding:3em; color:var(--ink-dim); font-size:1.1rem;">جارٍ البحث...</div>
+      <div id="import-empty" style="display:none; text-align:center; padding:3em; color:var(--ink-dim); font-size:1.1rem;">لا توجد تطبيقات لعرضها. اضغط على زر الفحص للبحث.</div>
+    </div>
+    
+    <div class="actions" style="padding:1em; border-top:1px solid var(--line); background:var(--bg-deep); display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; gap:.5em;">
+        <button id="btn-import-scan" style="padding:.6em 1.2em; border-radius:8px; background:var(--line); color:var(--ink); border:none; cursor:pointer;">📁 استعراض مجلد...</button>
+        <button id="btn-import-detect" style="padding:.6em 1.2em; border-radius:8px; background:var(--line); color:var(--ink); border:none; cursor:pointer;">🔍 البحث التلقائي بالويندوز</button>
+      </div>
+      <div style="display:flex; gap:.5em; align-items:center;">
+        <select id="import-row-select" style="padding:.6em; border-radius:8px; background:var(--bg); color:var(--ink); border:1px solid var(--line); outline:none; font-family:inherit;"></select>
+        <button id="btn-import-add" style="padding:.6em 1.2em; border-radius:8px; background:var(--focus); color:#000; border:none; cursor:pointer; font-weight:bold;">إضافة المحدد</button>
+        <button id="btn-import-cancel" style="padding:.6em 1.2em; border-radius:8px; background:transparent; color:var(--ink); border:1px solid var(--line); cursor:pointer;">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js" defer></script>
+<script src="entertainment.js" defer></script>
 </body>
 </html>

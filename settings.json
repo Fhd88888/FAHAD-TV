@@ -1,0 +1,21 @@
+{
+  "start_with_windows": true,
+  "fullscreen": true,
+  "theme": "dark",
+  "blur_strength": 10,
+  "animations": true,
+  "hero_backgrounds": true,
+  "sports": {
+    "enabled": true,
+    "favoriteLeagues": [
+      "307",
+      "39",
+      "140",
+      "135",
+      "2",
+      "17"
+    ],
+    "favoriteTeams": []
+  },
+  "wallpaper": ""
+}

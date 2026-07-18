@@ -23,6 +23,8 @@ import webbrowser
 import winreg
 
 import webview
+from sports import sports_service, migrate_league_ids
+from entertainment import entertainment_service
 
 PALETTE = [
     ("#1d5c8f", "#12395c"), ("#a3282d", "#5e1518"), ("#a67c1e", "#5f470f"),
@@ -77,23 +79,60 @@ def app_dir() -> str:
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
+def user_data_dir() -> str:
+    app_data = os.getenv("LOCALAPPDATA")
+    if not app_data:
+        app_data = os.path.expanduser("~")
+    d = os.path.join(app_data, "FAHAD_TV")
+    os.makedirs(d, exist_ok=True)
+    return d
 
 def resource_path(name: str) -> str:
-    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base, name)
+    return os.path.join(app_dir(), name)
 
-
-CONFIG = os.path.join(app_dir(), "apps.json")
-# legacy icons directory (already used by v3)
-ICONS_DIR = os.path.join(app_dir(), "icons")
-# new caches for richer metadata
-CACHE_DIR = os.path.join(app_dir(), "cache")
+USER_DIR = user_data_dir()
+CONFIG = os.path.join(USER_DIR, "apps.json")
+ICONS_DIR = os.path.join(USER_DIR, "icons")
+CACHE_DIR = os.path.join(USER_DIR, "cache")
 ICONS_CACHE_DIR = os.path.join(CACHE_DIR, "icons")
 WALLPAPERS_CACHE_DIR = os.path.join(CACHE_DIR, "wallpapers")
+SETTINGS_FILE = os.path.join(USER_DIR, "settings.json")
 
 os.makedirs(ICONS_CACHE_DIR, exist_ok=True)
 os.makedirs(WALLPAPERS_CACHE_DIR, exist_ok=True)
 
+import shutil
+def migrate_legacy_data():
+    legacy_config = os.path.join(app_dir(), "apps.json")
+    if os.path.exists(legacy_config) and not os.path.exists(CONFIG):
+        try: shutil.copy2(legacy_config, CONFIG)
+        except: pass
+
+    legacy_settings = os.path.join(app_dir(), "settings.json")
+    if os.path.exists(legacy_settings) and not os.path.exists(SETTINGS_FILE):
+        try: shutil.copy2(legacy_settings, SETTINGS_FILE)
+        except: pass
+
+migrate_legacy_data()
+
+
+def migrate_sports_settings():
+    """تحويل معرفات الدوريات القديمة (API-Football الرقمية) إلى رموز ESPN الجديدة."""
+    try:
+        settings = load_settings()
+        sports = settings.get("sports", {})
+        old_favs = [str(x) for x in sports.get("favoriteLeagues", [])]
+        new_favs = migrate_league_ids(old_favs)
+        if new_favs != old_favs:
+            sports["favoriteLeagues"] = new_favs
+            settings["sports"] = sports
+            save_settings(settings)
+        # كاش الدوريات القديم من API-Football لم يعد مستخدماً
+        legacy_leagues_cache = os.path.join(USER_DIR, "leagues.json")
+        if os.path.exists(legacy_leagues_cache):
+            os.remove(legacy_leagues_cache)
+    except Exception as e:
+        print("Sports migration failed:", e)
 
 
 def sort_rows(rows):
@@ -116,14 +155,27 @@ def load_rows():
         return json.loads(json.dumps(DEFAULT_ROWS))
 
 def load_settings():
-    path = os.path.join(app_dir(), "settings.json")
+    path = SETTINGS_FILE
     default_settings = {
         "start_with_windows": False,
         "fullscreen": True,
         "theme": "dark",
         "blur_strength": 10,
         "animations": True,
-        "hero_backgrounds": True
+        "hero_backgrounds": True,
+        "sports": {
+            "enabled": True,
+            "favoriteLeagues": [],
+            "favoriteTeams": []
+        },
+        "entertainment": {
+            "enabled": True,
+            "tmdb_api_key": "",
+            "use_default_api": True,
+            "language": "ar-SA",
+            "region": "SA",
+            "genres": []
+        }
     }
     if not os.path.exists(path):
         return default_settings
@@ -136,9 +188,12 @@ def load_settings():
         return default_settings
 
 def save_settings(settings):
-    path = os.path.join(app_dir(), "settings.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(settings, f, ensure_ascii=False, indent=2)
+    path = SETTINGS_FILE
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving settings: {e}")
 
 def toggle_startup(enable: bool):
     try:
@@ -281,6 +336,25 @@ def cache_local_image(app_id: str, local_path: str, dst_dir: str) -> str:
         return local_path
 
 
+def get_exe_name(target_path: str) -> str:
+    """Extracts FileDescription from EXE if available."""
+    if not target_path or not os.path.exists(target_path):
+        return ""
+    if target_path.lower().endswith(".exe"):
+        try:
+            import win32api
+            lang, codepage = win32api.GetFileVersionInfo(target_path, '\\VarFileInfo\\Translation')[0]
+            str_info = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage, 'FileDescription')
+            desc = win32api.GetFileVersionInfo(target_path, str_info)
+            if desc and desc.strip():
+                return desc.strip()
+        except Exception:
+            pass
+    # Fallback to filename
+    base = os.path.basename(target_path)
+    name, _ = os.path.splitext(base)
+    return name
+
 def extract_icon(target_path: str, app_id: str, dst_dir: str = ICONS_CACHE_DIR) -> str:
     """Extracts icon from EXE or LNK files automatically."""
     if not target_path or not os.path.exists(target_path):
@@ -319,9 +393,18 @@ def normalize_app(app: dict) -> dict:
         app["c1"] = "#31566e"
     if "c2" not in app or not app["c2"]:
         app["c2"] = "#1b3242"
+        
+    # v1.10 metadata
+    if "favorite" not in app:
+        app["favorite"] = False
+    if "hidden" not in app:
+        app["hidden"] = False
+    if "launchCount" not in app:
+        app["launchCount"] = 0
+    if "lastOpened" not in app:
+        app["lastOpened"] = 0
+        
     return app
-
-
 
 class Api:
     """الدوال هذي تنستدعى من JavaScript عبر window.pywebview.api"""
@@ -330,8 +413,10 @@ class Api:
         if not webview.windows:
             return {"ok": False}
         window = webview.windows[0]
+        allow_multiple = False
         if file_type == "exe":
             file_types = ('Applications (*.exe;*.lnk)', 'All files (*.*)')
+            allow_multiple = True
         elif file_type == "icon":
             file_types = ('Images (*.png;*.jpg;*.jpeg;*.ico)', 'All files (*.*)')
         else:
@@ -339,15 +424,35 @@ class Api:
             
         result = window.create_file_dialog(
             webview.OPEN_DIALOG,
-            allow_multiple=False,
+            allow_multiple=allow_multiple,
             file_types=file_types
         )
         if result and len(result) > 0:
+            if file_type == "exe":
+                return {"ok": True, "paths": list(result), "path": result[0]}
             return {"ok": True, "path": result[0]}
         return {"ok": False}
 
     def get_settings(self):
         return load_settings()
+
+    def get_sports_data(self, force=False):
+        return sports_service.get_matches(load_settings().get('sports', {}), force)
+        
+    def get_all_leagues(self):
+        return sports_service.get_all_leagues()
+
+    def ent_get_discover(self):
+        return entertainment_service.get_discover_page(load_settings().get('entertainment', {}))
+
+    def ent_get_calendar(self):
+        return entertainment_service.get_calendar(load_settings().get('entertainment', {}))
+
+    def ent_search(self, query):
+        return entertainment_service.search(query, load_settings().get('entertainment', {}))
+
+    def ent_get_details(self, media_type, item_id):
+        return entertainment_service.get_details(media_type, item_id, load_settings().get('entertainment', {}))
 
     def read_image(self, path: str):
         if not path or not os.path.exists(path):
@@ -411,7 +516,34 @@ class Api:
             os.system("shutdown /r /t 0")
         elif action == "sleep":
             os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+        elif action == "restart_app":
+            # يشغّل نسخة جديدة ثم يغلق الحالية — Popen بقائمة يتعامل مع المسارات ذات المسافات
+            try:
+                if getattr(sys, "frozen", False):
+                    subprocess.Popen([sys.executable])
+                else:
+                    subprocess.Popen([sys.executable, os.path.abspath(__file__)])
+            except Exception as e:
+                print("restart_app failed:", e)
+            self.quit()
         return {"ok": True}
+
+    def factory_reset(self):
+        try:
+            # Delete apps.json
+            if os.path.exists(CONFIG):
+                os.remove(CONFIG)
+            
+            # Reset settings
+            if os.path.exists(SETTINGS_FILE):
+                os.remove(SETTINGS_FILE)
+            
+            # Disable startup
+            toggle_startup(False)
+            
+            return {"ok": True}
+        except Exception as e:
+            return {"ok": False, "msg": str(e)}
 
     def get_rows(self):
         return load_rows()
@@ -452,7 +584,7 @@ class Api:
 
     def launch(self, app_id: str):
         rows = load_rows()
-        _, app = find_app(rows, app_id)
+        row, app = find_app(rows, app_id)
         if app is None:
             return {"ok": False, "msg": "التطبيق غير موجود"}
 
@@ -460,7 +592,14 @@ class Api:
             target = app.get("target")
             args = app.get("args") or ""
             launch_target(target, args)
-            return {"ok": True}
+            
+            # Update launch metadata
+            import time
+            app["lastOpened"] = int(time.time() * 1000)
+            app["launchCount"] = app.get("launchCount", 0) + 1
+            save_rows(rows)
+            
+            return {"ok": True, "rows": rows}
         except Exception as e:
             return {"ok": False, "msg": f"فشل التشغيل: {e}"}
 
@@ -486,16 +625,15 @@ class Api:
         except Exception as e:
             return {"ok": False, "msg": f"فشل البحث: {e}"}
 
-    def add_app(self, row_index: int, name: str, path: str, glyph: str, img_url: str = "", icon_url: str = "", c1: str = "#31566e", c2: str = "#1b3242"):
-        """إضافة تطبيق لصف معين (stage-1)."""
+    def add_app(self, row_index: int, name: str, path: str, glyph: str, img_url: str = "", icon_url: str = "", c1: str = "#31566e", c2: str = "#1b3242", favorite: bool = False, hidden: bool = False):
+        import time
         rows = load_rows()
         if not (0 <= row_index < len(rows)):
             return {"ok": False, "msg": "الصف غير موجود"}
 
         app_id = "app_" + str(int(time.time() * 1000))
         p = path.strip().strip('"')
-        sub = p if p.startswith("http") else os.path.basename(p)
-
+        
         bg = ""
         if img_url:
             img_url = str(img_url).strip()
@@ -535,19 +673,70 @@ class Api:
             "glyph": glyph or "📌",
             "c1": c1,
             "c2": c2,
-            # new fields (stage-1)
-            "backgroundPath": background,
+            "backgroundPath": bg,
             "iconPath": iconPath,
             "args": "",
-            # legacy field for existing UI fallback
-            "img": background,
+            "img": bg,
             "target": path,
+            "favorite": favorite,
+            "hidden": hidden,
+            "launchCount": 0,
+            "lastOpened": 0
         })
         save_rows(rows)
         return {"ok": True, "rows": rows}
 
+    def add_apps_bulk(self, row_index: int, paths: list):
+        """إضافة عدة تطبيقات دفعة واحدة مع استخراج الأسماء والأيقونات تلقائياً."""
+        import time
+        rows = load_rows()
+        if not (0 <= row_index < len(rows)):
+            return {"ok": False, "msg": "الصف غير موجود"}
 
-    def update_app(self, app_id: str, name: str, path: str, glyph: str, img_url: str = "", icon_url: str = "", new_row_index: int = -1, c1: str = "", c2: str = ""):
+        added_count = 0
+        for p in paths:
+            if not p or not os.path.exists(p):
+                continue
+            
+            target_path = p
+            # Resolve LNK if needed
+            if p.lower().endswith(".lnk"):
+                t, _, _ = resolve_shortcut(p)
+                if t and os.path.exists(t):
+                    target_path = t
+            
+            name = get_exe_name(target_path)
+            app_id = "app_" + str(int(time.time() * 1000)) + str(added_count)
+            
+            iconPath = extract_icon(p, app_id)
+            
+            app_obj = {
+                "id": app_id,
+                "name": name,
+                "sub": os.path.basename(p),
+                "glyph": "📌",
+                "c1": "#31566e",
+                "c2": "#1b3242",
+                "backgroundPath": "",
+                "iconPath": iconPath,
+                "args": "",
+                "img": "",
+                "target": p,
+                "favorite": False,
+                "hidden": False,
+                "launchCount": 0,
+                "lastOpened": 0
+            }
+            rows[row_index]["apps"].append(app_obj)
+            added_count += 1
+            
+        if added_count > 0:
+            save_rows(rows)
+            return {"ok": True, "rows": rows, "count": added_count}
+        return {"ok": False, "msg": "لم يتم إضافة أي تطبيق صحيح"}
+
+
+    def update_app(self, app_id: str, name: str, path: str, glyph: str, img_url: str = "", icon_url: str = "", new_row_index: int = -1, c1: str = "", c2: str = "", favorite: bool = False, hidden: bool = False):
         """تعديل تطبيق موجود (stage-1).
         img_url: '' = بدون تغيير، 'none' = إزالة الخلفية، رابط/مسار = خلفية جديدة.
         icon_url: '' = بدون تغيير، 'none' = إزالة الأيقونة، رابط/مسار = أيقونة جديدة.
@@ -608,7 +797,10 @@ class Api:
             else:
                 ic = cache_local_image(app_id + "_ic", icon_url, ICONS_CACHE_DIR)
                 app["iconPath"] = ic
-                
+        
+        app["favorite"] = favorite
+        app["hidden"] = hidden
+
         # move to new row
         if new_row_index != -1 and 0 <= new_row_index < len(rows) and old_row != rows[new_row_index]:
             old_row["apps"].remove(app)
@@ -646,12 +838,256 @@ class Api:
         save_rows(rows)
         return {"ok": True, "rows": rows}
 
+    def get_windows_status(self):
+        import subprocess
+        wifi_status = "غير متصل"
+        try:
+            out = subprocess.check_output('netsh wlan show interfaces', shell=True, text=True, encoding='utf-8', errors='ignore')
+            for line in out.splitlines():
+                if 'SSID' in line and 'BSSID' not in line:
+                    wifi_status = line.split(':', 1)[1].strip()
+                    break
+        except: pass
+        
+        bt_status = "غير معروف"
+        try:
+            out = subprocess.check_output('powershell -command "Get-Service bthserv | Select-Object -ExpandProperty Status"', shell=True, text=True, encoding='utf-8', errors='ignore').strip()
+            if out == "Running":
+                bt_status = "مُفعّل"
+            elif out == "Stopped":
+                bt_status = "متوقف"
+        except: pass
+        
+        return {"ok": True, "wifi": wifi_status, "bluetooth": bt_status}
+
+    def get_network_status(self):
+        """حالة الشبكة لمؤشر الشريط العلوي: واي فاي (متصل + اسم الشبكة) وإيثرنت."""
+        wifi = {"connected": False, "ssid": ""}
+        ethernet = {"connected": False}
+
+        # واي فاي عبر netsh — وجود SSID غير فارغ = متصل (لا يعتمد على لغة الويندوز)
+        try:
+            out = subprocess.check_output(
+                'netsh wlan show interfaces', shell=True, text=True,
+                encoding='utf-8', errors='ignore')
+            ssid = ""
+            for line in out.splitlines():
+                l = line.strip()
+                low = l.lower()
+                if low.startswith('ssid') and not low.startswith('bssid') and ':' in l:
+                    val = l.split(':', 1)[1].strip()
+                    if val:
+                        ssid = val
+                        break
+            if ssid:
+                wifi = {"connected": True, "ssid": ssid}
+        except Exception:
+            pass
+
+        # إيثرنت عبر PowerShell — محوّل فيزيائي سلكي (802.3) وحالته Up
+        try:
+            ps = ('powershell -NoProfile -Command "'
+                  "(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | "
+                  "Where-Object { $_.Status -eq 'Up' -and "
+                  "($_.PhysicalMediaType -eq '802.3' -or $_.MediaType -eq '802.3') } | "
+                  'Measure-Object).Count"')
+            out = subprocess.check_output(
+                ps, shell=True, text=True, encoding='utf-8', errors='ignore').strip()
+            if out.isdigit() and int(out) > 0:
+                ethernet = {"connected": True}
+        except Exception:
+            pass
+
+        return {"ok": True, "wifi": wifi, "ethernet": ethernet}
+
+    def search_windows_apps(self, query: str):
+        query = query.strip().lower()
+        if not query:
+            return {"ok": False, "msg": "أدخل نص البحث"}
+        
+        results = []
+        try:
+            from pathlib import Path
+            import glob
+            
+            paths_to_scan = [
+                os.path.expandvars(r"%ProgramData%\Microsoft\Windows\Start Menu\Programs"),
+                os.path.expandvars(r"%AppData%\Microsoft\Windows\Start Menu\Programs")
+            ]
+            
+            for base_path in paths_to_scan:
+                if not os.path.exists(base_path): continue
+                # Limit scan to avoid slow perf
+                for p in glob.glob(base_path + '/**/*.lnk', recursive=True):
+                    name = os.path.splitext(os.path.basename(p))[0]
+                    if query in name.lower():
+                        results.append({
+                            "name": name,
+                            "path": p
+                        })
+                        if len(results) > 20: # Limit results
+                            break
+                if len(results) > 20: break
+                
+            return {"ok": True, "results": results}
+        except Exception as e:
+            return {"ok": False, "msg": f"فشل البحث: {str(e)}"}
+
+    def detect_installed_apps(self):
+        """Finds all installed apps in Start Menu without a query."""
+        results = []
+        try:
+            import glob
+            
+            paths_to_scan = [
+                os.path.expandvars(r"%ProgramData%\Microsoft\Windows\Start Menu\Programs"),
+                os.path.expandvars(r"%AppData%\Microsoft\Windows\Start Menu\Programs")
+            ]
+            
+            for base_path in paths_to_scan:
+                if not os.path.exists(base_path): continue
+                for p in glob.glob(base_path + '/**/*.lnk', recursive=True):
+                    name = os.path.splitext(os.path.basename(p))[0]
+                    # Filter out uninstallers and website links
+                    nl = name.lower()
+                    if "uninstall" in nl or "help" in nl or "url" in nl: continue
+                    results.append({"name": name, "path": p})
+            
+            # Sort alphabetically and remove duplicates by name
+            unique_results = {r["name"]: r for r in results}.values()
+            sorted_results = sorted(list(unique_results), key=lambda x: x["name"])
+            return {"ok": True, "results": sorted_results}
+        except Exception as e:
+            return {"ok": False, "msg": f"فشل الكشف: {str(e)}"}
+
+    def scan_folder_for_apps(self, folder_path: str):
+        """Scans a directory for .exe files."""
+        if not folder_path or not os.path.exists(folder_path):
+            return {"ok": False, "msg": "مسار المجلد غير صالح"}
+            
+        results = []
+        try:
+            for root, dirs, files in os.walk(folder_path):
+                # Don't go too deep or into obvious non-app folders
+                if "node_modules" in dirs: dirs.remove("node_modules")
+                if "Crashpad" in dirs: dirs.remove("Crashpad")
+                
+                for f in files:
+                    if f.lower().endswith(".exe"):
+                        nl = f.lower()
+                        # Filter out common non-launchers
+                        if "unins" in nl or "setup" in nl or "crash" in nl or "update" in nl or "vcredist" in nl or "dxweb" in nl:
+                            continue
+                            
+                        fp = os.path.join(root, f)
+                        # Filter out small files (< 500KB usually aren't main games/apps unless it's a very simple tool)
+                        try:
+                            if os.path.getsize(fp) < 300 * 1024:
+                                continue
+                        except: pass
+                        
+                        name = get_exe_name(fp)
+                        if not name: name = os.path.splitext(f)[0]
+                        results.append({"name": name, "path": fp})
+            
+            unique_results = {r["name"]: r for r in results}.values()
+            sorted_results = sorted(list(unique_results), key=lambda x: x["name"])
+            return {"ok": True, "results": sorted_results}
+        except Exception as e:
+            return {"ok": False, "msg": f"فشل الفحص: {str(e)}"}
+
+    def browse_folder(self):
+        """Open a directory picker."""
+        try:
+            import win32gui, win32con
+            from win32com.shell import shell, shellcon
+            desktop_pidl = shell.SHGetFolderLocation(0, shellcon.CSIDL_DESKTOP, 0, 0)
+            pidl, display_name, image_list = shell.SHBrowseForFolder(
+                win32gui.GetDesktopWindow(),
+                desktop_pidl,
+                "اختر المجلد لفحصه بحثاً عن التطبيقات:",
+                0,
+                None,
+                None
+            )
+            if pidl:
+                path = shell.SHGetPathFromIDList(pidl)
+                return {"ok": True, "path": path.decode("utf-8")}
+        except ImportError:
+            # Fallback if pywin32 is not fully functional for this
+            pass
+            
+        # Fallback to tkinter
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            folder_path = filedialog.askdirectory(parent=root, title="اختر مجلد التطبيقات")
+            root.destroy()
+            if folder_path:
+                return {"ok": True, "path": folder_path.replace("/", "\\")}
+        except Exception as e:
+            pass
+            
+        return {"ok": False, "msg": "إلغاء"}
+
+    def get_storage_stats(self):
+        def get_size(start_path):
+            total_size = 0
+            for dirpath, dirnames, filenames in os.walk(start_path):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    if not os.path.islink(fp):
+                        total_size += os.path.getsize(fp)
+            return total_size
+            
+        icons_sz = get_size(ICONS_CACHE_DIR) if os.path.exists(ICONS_CACHE_DIR) else 0
+        wall_sz = get_size(WALLPAPERS_CACHE_DIR) if os.path.exists(WALLPAPERS_CACHE_DIR) else 0
+        
+        return {
+            "ok": True,
+            "icons_mb": round(icons_sz / (1024 * 1024), 2),
+            "wallpapers_mb": round(wall_sz / (1024 * 1024), 2)
+        }
+
     def quit(self):
         for w in webview.windows:
             w.destroy()
 
 
+def _current_exe_name():
+    """اسم ملف التطبيق التنفيذي (للنسخة المبنية) أو FAHAD_TV.exe افتراضياً."""
+    if getattr(sys, "frozen", False):
+        return os.path.basename(sys.executable)
+    return "FAHAD_TV.exe"
+
+
+def _kill_running_instances(include_self=False):
+    """يغلق نسخ FAHAD TV العاملة عبر taskkill (يستثني هذه العملية افتراضياً)."""
+    try:
+        import time
+        name = _current_exe_name()
+        if include_self:
+            cmd = f'taskkill /F /IM "{name}"'
+        else:
+            cmd = f'taskkill /F /IM "{name}" /FI "PID ne {os.getpid()}"'
+        subprocess.run(cmd, shell=True, capture_output=True)
+        time.sleep(0.6)  # مهلة بسيطة ليُحرَّر منفذ النافذة قبل الإقلاع من جديد
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
+    # أيقونات سطح المكتب:  --restart لإعادة التشغيل  |  --quit لإغلاق البرنامج
+    if "--restart" in sys.argv:
+        _kill_running_instances(include_self=False)  # يُغلق النسخة العاملة ثم يكمل الإقلاع
+    elif "--quit" in sys.argv or "--shutdown" in sys.argv:
+        _kill_running_instances(include_self=True)   # يُغلق كل النسخ ويخرج
+        raise SystemExit(0)
+
+    migrate_sports_settings()
     settings = load_settings()
     webview.create_window(
         title="FAHAD TV",

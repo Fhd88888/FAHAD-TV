@@ -1,0 +1,10 @@
+# متطلبات تشغيل FAHAD TV
+# التنصيب:  pip install -r requirements.txt
+
+# --- التشغيل (Runtime) ---
+pywebview==6.2.1        # نافذة الواجهة (WebView)
+pywin32==312           # اختصارات ويندوز، أيقونات EXE، مستكشف المجلدات
+icoextract==0.3.0      # استخراج أيقونات التطبيقات من ملفات exe/lnk
+
+# --- البناء والتوزيع (Build) — مطلوبة فقط لإنشاء الـ MSI/EXE ---
+cx_Freeze==8.6.4
