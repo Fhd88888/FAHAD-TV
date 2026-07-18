@@ -29,42 +29,10 @@ An open-source Windows app that mimics the Android TV experience: a customizable
 
 | Version | Download |
 |---|---|
-| v1.36 | [FAHAD TV1.36.rar](LINK) |
-| v1.35 | [FAHAD TV1.35.rar](LINK) |
-| v1.34 | [FAHAD TV1.34.rar](LINK) |
-| v1.33 | [FAHAD TV1.33.rar](LINK) |
-| v1.32 | [FAHAD TV1.32.rar](LINK) |
-| v1.31 | [FAHAD TV1.31.rar](LINK) |
-| v1.30 | [FAHAD TV1.30.rar](LINK) |
-| v1.29 | [FAHAD TV1.29.rar](LINK) |
-| v1.28 | [FAHAD TV1.28.rar](LINK) |
-| v1.27 | [FAHAD TV1.27.rar](LINK) |
-| v1.26 | [FAHAD TV1.26.rar](LINK) |
-| v1.25 | [FAHAD TV1.25.rar](LINK) |
-| v1.24 | [FAHAD TV1.24.rar](LINK) |
-| v1.23 | [FAHAD TV1.23.rar](LINK) |
-| v1.22 | [FAHAD TV1.22.rar](LINK) |
-| v1.21 | [FAHAD TV1.21.rar](LINK) |
-| v1.20 | [FAHAD TV1.20.rar](LINK) |
-| v1.19 | [FAHAD TV1.19.rar](LINK) |
-| v1.18 | [FAHAD TV 1.18.rar](LINK) |
-| v1.17 | [FAHAD TV 1.17.rar](LINK) |
-| v1.16 | [FAHAD TV1.16.rar](LINK) |
-| v1.15 | [FAHAD TV1.15.rar](LINK) |
-| v1.14 | [FAHAD TV1.14.rar](LINK) |
-| v1.13 | [FAHAD TV1.13.rar](LINK) |
-| v1.12 | [FAHAD TV1.12.rar](LINK) |
-| v1.11 | [FAHAD TV1.11.rar](LINK) |
-| v1.10 | [FAHAD TV1.10.rar](LINK) |
-| v1.9 | [FAHAD TV1.9.rar](LINK) |
-| v1.8 | [FAHAD TV1.8.rar](LINK) |
-| v1.7 | [FAHAD TV1.7.rar](LINK) |
-| v1.6 | [FAHAD TV1.6.rar](LINK) |
-| v1.5 | [FAHAD TV1.5.rar](LINK) |
-| v1.4 | [FAHAD TV1.4.rar](LINK) |
-| v1.3 | [FAHAD TV1.3.rar](LINK) |
-| v1.2 | [FAHAD TV1.2.rar](LINK) |
-| v1.1 | [FAHAD TV1.1.rar](LINK) |
-| v1.0 | [FAHAD TV.rar](LINK) |
+| v1.36 | [FAHAD TV1.36.rar](https://drive.google.com/file/d/12MHBljt4mCsDuJk3SlMjHuSiFe6VwT-y/view?usp=drive_link) |
+| v1.35 | [FAHAD TV1.35.rar](https://drive.google.com/file/d/13i432LP_CfO7DqZBMupQQlKISrnW8p_7/view?usp=drive_link) |
+| v1.34 | [FAHAD TV1.34.rar](https://drive.google.com/file/d/1uifHKM3zSYjNnOp5M3db4lTMgqSjqbAe/view?usp=drive_link) |
+| v1.33 | [FAHAD TV1.33.rar](https://drive.google.com/file/d/1NK1fu2xOm_7jnzKqT94yYwXX6l9Q0eo1/view?usp=drive_link) |
+|
 
 ## 🛠️ Requirements
